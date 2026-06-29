@@ -1,0 +1,346 @@
+/* Goodison Park Properties — Global Stylesheet */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Text colors */
+  --gp-black: #111827;
+  --gp-muted: #6B7280;
+  --gp-white: #FFFFFF;
+
+  /* Theme Layout & Panels */
+  --gp-background: #F9FAFB;
+  --gp-dark: #FFFFFF;
+  --gp-card: #FFFFFF;
+  
+  /* Borders */
+  --gp-border-dark: #E5E7EB;
+  --gp-border-light: #E5E7EB;
+
+  /* Accent Blue */
+  --gp-blue: #3B82F6;
+  --gp-blue-dim: #2563EB;
+  --gp-blue-glow: rgba(59, 130, 246, 0.08);
+
+  /* Status Colors */
+  --gp-red: #EF4444;
+  --gp-green: #10B981;
+  --gp-amber: #F59E0B;
+  --gp-purple: #8B5CF6;
+  --gp-off-white: #F3F4F6;
+  
+  /* Structural Dimensions */
+  --sidebar-width: 240px;
+  --topbar-height: 56px;
+  
+  /* Layout Controls */
+  --close-btn-display: none;
+}
+
+html.dark {
+  /* Text colors */
+  --gp-black: #F9FAFB;
+  --gp-muted: #9CA3AF;
+  --gp-white: #0A0A0A;
+
+  /* Theme Layout & Panels */
+  --gp-background: #0A0A0A;
+  --gp-dark: #111111;
+  --gp-card: #1C1C1C;
+  
+  /* Borders */
+  --gp-border-dark: #2A2A2A;
+  --gp-border-light: #2A2A2A;
+
+  /* Accent Blue */
+  --gp-blue: #38BDF8;
+  --gp-blue-dim: #0EA5E9;
+  --gp-blue-glow: rgba(56, 189, 248, 0.12);
+  --gp-off-white: #1C1C1C;
+}
+
+/* ── Reset & Base ────────────────────────────────────────── */
+*, *::before, *::after {
+  border-radius: 0 !important;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--gp-white);
+  color: var(--gp-black);
+  line-height: 1.5;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.app-main {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+
+input, select, textarea {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--gp-card);
+  color: var(--gp-black);
+  border: 1px solid var(--gp-border-light);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--gp-muted);
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--gp-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gp-blue-dim);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gp-blue);
+}
+
+/* ── Tables ──────────────────────────────────────────────── */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* ── Skeleton Shimmer ────────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ── Progress Bar ────────────────────────────────────────── */
+.progress-bar {
+  height: 6px;
+  background: var(--gp-border-light);
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--gp-blue);
+  transition: width 0.3s ease;
+}
+.progress-bar-fill.amber { background: var(--gp-amber); }
+.progress-bar-fill.red { background: var(--gp-red); }
+.progress-bar-fill.green { background: var(--gp-green); }
+
+/* ── Slide-in Animations ─────────────────────────────────── */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ── Toast Notifications ─────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  width: 320px;
+  background: var(--gp-dark);
+  border: 1px solid var(--gp-border-dark);
+  color: var(--gp-black);
+  padding: 12px 16px;
+  animation: slideInRight 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+.toast.info { border-left: 3px solid var(--gp-blue); }
+.toast.success { border-left: 3px solid var(--gp-green); }
+.toast.warning { border-left: 3px solid var(--gp-amber); }
+.toast.error { border-left: 3px solid var(--gp-red); }
+
+/* ── Print Styles ────────────────────────────────────────── */
+@media print {
+  .sidebar, .topbar, .no-print, .pagination-controls,
+  button, .filters-bar { display: none !important; }
+  body { background: white; color: black; font-size: 11pt; }
+  .print-header { display: block !important; }
+  .page-break { page-break-before: always; }
+  table { width: 100%; }
+}
+
+.sidebar {
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+.sidebar.open {
+  transform: translateX(0);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  :root {
+    --close-btn-display: block;
+  }
+  .sidebar-overlay { display: block !important; }
+  .topbar { left: 0 !important; }
+  .app-main { margin-left: 0 !important; }
+}
+
+@media (max-width: 768px) {
+  /* Override inline display: grid to 1 column on mobile, excluding 7-column calendars */
+  div[style*="display: grid"]:not([style*="repeat(7"]):not([style*="repeat(7"]):not([style*="gridTemplateColumns: 'repeat(7"]) {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reduce padding on the main content wrapper for maximum mobile screen usage */
+  main[style*="padding: 24px"], main {
+    padding: 16px !important;
+  }
+
+  /* Make form layouts single column and reduce gaps */
+  div[style*="gridTemplateColumns: '1fr 1fr'"], div[style*="gridTemplateColumns: '1fr 2fr'"] {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Stack Settings layout on mobile and make the tab bar scrollable horizontally */
+  .settings-layout {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+  .settings-sidebar {
+    width: 100% !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    border-bottom: 1px solid var(--gp-border-light);
+    padding-bottom: 8px;
+  }
+  .settings-sidebar button {
+    white-space: nowrap !important;
+    padding: 8px 12px !important;
+    border-left: none !important;
+    border-bottom: 3px solid transparent;
+  }
+
+  /* Stack Profile Header Card on mobile and center align details */
+  .profile-header-card {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding: 16px !important;
+    gap: 16px !important;
+  }
+  .profile-header-card > div[style*="flex: 1"] {
+    width: 100% !important;
+  }
+  .profile-header-card div[style*="justify-content: space-between"], 
+  .profile-header-card div[style*="justifyContent: 'space-between'"] {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  /* Stack pending approval rows and general dashboard list items on mobile */
+  .list-item-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding: 16px !important;
+  }
+  .list-item-row > div[style*="display: flex"], .list-item-row > div {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Optimize Auth layouts for smaller mobile screens */
+  .auth-page-wrapper {
+    padding: 16px !important;
+  }
+  .auth-form-card {
+    padding: 24px 16px !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+  .mobile-only-branding {
+    display: flex !important;
+  }
+
+  /* Prevent iOS auto-zoom when tapping inputs by forcing at least 16px font-size */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Stack Documents categories and list on mobile */
+  .documents-layout {
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+  .documents-sidebar {
+    width: 100% !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--gp-border-light) !important;
+    padding-right: 0 !important;
+    padding-bottom: 16px !important;
+  }
+  .documents-categories-list {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    padding-bottom: 4px !important;
+    gap: 12px !important;
+  }
+  .documents-categories-list li {
+    white-space: nowrap !important;
+    padding: 6px 12px !important;
+    background: var(--gp-card);
+    border: 1px solid var(--gp-border-light);
+  }
+}
