@@ -1,15 +1,11 @@
 import { createClient } from '@insforge/sdk'
 
-const INSFORGE_URL = import.meta.env.VITE_INSFORGE_URL
-const INSFORGE_ANON_KEY = import.meta.env.VITE_INSFORGE_ANON_KEY
-
-if (!INSFORGE_URL || !INSFORGE_ANON_KEY) {
-  console.warn('InsForge credentials not set. Add VITE_INSFORGE_URL and VITE_INSFORGE_ANON_KEY to your .env.local file.')
-}
+const INSFORGE_URL = import.meta.env.VITE_INSFORGE_URL || 'https://364z584v.eu-central.insforge.app'
+const INSFORGE_ANON_KEY = import.meta.env.VITE_INSFORGE_ANON_KEY || 'ik_7002b931d83331045a220e95429eb951'
 
 const sdkClient = createClient({
-  baseUrl: INSFORGE_URL || 'https://placeholder.insforge.io',
-  anonKey: INSFORGE_ANON_KEY || 'placeholder-anon-key'
+  baseUrl: INSFORGE_URL,
+  anonKey: INSFORGE_ANON_KEY
 })
 
 const authListeners = new Set()
