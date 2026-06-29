@@ -196,7 +196,7 @@ export function Messages() {
       <div
         style={{
           width: 280,
-          borderRight: '1px solid #2A2A2A',
+          borderRight: '1px solid var(--gp-border-light)',
           background: "var(--gp-background)",
           display: 'flex',
           flexDirection: 'column',
@@ -207,7 +207,6 @@ export function Messages() {
         <div
           style={{
             padding: '16px',
-            borderBottom: '1px solid #2A2A2A',
             borderBottom: '1px solid var(--gp-border-light)',
             display: 'flex',
             alignItems: 'center',
