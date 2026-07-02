@@ -35,10 +35,22 @@ export function Directory() {
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ['employees', company?.id],
     queryFn: async () => {
+      // Fetch branches first to map them in-memory
+      const { data: branchesList, error: branchesErr } = await insforge
+        .from('branches')
+        .select('id, name')
+        .eq('company_id', company?.id)
+      if (branchesErr) throw branchesErr
+
+      const branchMap = {}
+      ;(branchesList || []).forEach(b => {
+        branchMap[b.id] = b.name
+      })
+
       // 1. Fetch active profiles
       const { data: activeProfiles, error: activeErr } = await insforge
         .from('profiles_view')
-        .select(`*, branches(name)`)
+        .select(`*`)
         .eq('company_id', company?.id)
         .order('first_name', { ascending: true })
       if (activeErr) throw activeErr
@@ -46,7 +58,7 @@ export function Directory() {
       // 2. Fetch pending invitations
       const { data: invitations, error: inviteErr } = await insforge
         .from('employee_invitations')
-        .select(`*, branches(name)`)
+        .select(`*`)
         .eq('company_id', company?.id)
       if (inviteErr) throw inviteErr
 
@@ -60,7 +72,7 @@ export function Directory() {
         department: inv.department,
         job_title: inv.job_title,
         branch_id: inv.branch_id,
-        branches: inv.branches,
+        branches: inv.branch_id ? { name: branchMap[inv.branch_id] || '-' } : null,
         role: inv.role,
         date_joined: inv.date_joined,
         is_active: false,
@@ -74,7 +86,8 @@ export function Directory() {
         ...activeProfiles.map(p => ({ 
           ...p, 
           status: p.is_active ? 'active' : 'inactive',
-          auth_users: { email: p.email }
+          auth_users: { email: p.email },
+          branches: p.branch_id ? { name: branchMap[p.branch_id] || '-' } : null
         }))
       ]
     },

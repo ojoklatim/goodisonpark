@@ -36,15 +36,28 @@ export function Users() {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['profiles', company?.id],
     queryFn: async () => {
+      // Fetch branches first to map them in-memory
+      const { data: branchesList, error: branchesErr } = await insforge
+        .from('branches')
+        .select('id, name')
+        .eq('company_id', company?.id)
+      if (branchesErr) throw branchesErr
+
+      const branchMap = {}
+      ;(branchesList || []).forEach(b => {
+        branchMap[b.id] = b.name
+      })
+
       const { data, error } = await insforge
         .from('profiles_view')
-        .select(`*, branches(name)`)
+        .select(`*`)
         .eq('company_id', company?.id)
       if (error) throw error
       
       return data.map(u => ({
         ...u,
-        auth_users: { email: u.email }
+        auth_users: { email: u.email },
+        branches: u.branch_id ? { name: branchMap[u.branch_id] || '-' } : null
       }))
     },
     enabled: !!company?.id
