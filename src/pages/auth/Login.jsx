@@ -31,13 +31,36 @@ export function Login() {
       const user = data.user
 
       // Fetch profile
-      const { data: profileData, error: profileError } = await insforge
+      let { data: profileData, error: profileError } = await insforge
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
       
       if (profileError) throw profileError
+
+      if (!profileData) {
+        // Self-healing: create profile record for users created directly in auth console
+        const emailParts = user.email.split('@')[0].split('.')
+        const firstName = emailParts[0] ? emailParts[0].charAt(0).toUpperCase() + emailParts[0].slice(1) : 'Employee'
+        const lastName = emailParts[1] ? emailParts[1].charAt(0).toUpperCase() + emailParts[1].slice(1) : 'User'
+
+        const { data: newProfile, error: insertErr } = await insforge
+          .from('profiles')
+          .insert({
+            id: user.id,
+            company_id: 'c06f2d3e-4db5-4849-88bd-f4fa72970002', // Goodison Park Properties
+            first_name: firstName,
+            last_name: lastName,
+            role: 'employee',
+            is_active: true
+          })
+          .select()
+          .single()
+
+        if (insertErr) throw insertErr
+        profileData = newProfile
+      }
 
       // Fetch company
       const { data: companyData, error: companyError } = await insforge
@@ -155,7 +178,7 @@ export function Login() {
       <p style={{ marginTop: '24px', fontSize: '14px', textAlign: 'center', color: 'var(--gp-muted)' }}>
         Don't have an account?{' '}
         <Link to="/auth/register" style={{ color: "var(--gp-blue)", fontWeight: 600, textDecoration: 'none' }}>
-          Register company
+          Join company
         </Link>
       </p>
 

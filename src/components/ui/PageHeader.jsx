@@ -1,6 +1,7 @@
 import React from 'react'
 
-export function PageHeader({ title, subtitle, actions, style }) {
+export function PageHeader({ title, subtitle, actions, action, style }) {
+  const renderActions = actions || action
   return (
     <div style={{
       paddingBottom: '16px',
@@ -23,9 +24,9 @@ export function PageHeader({ title, subtitle, actions, style }) {
           </p>
         )}
       </div>
-      {actions && (
+      {renderActions && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          {actions}
+          {renderActions}
         </div>
       )}
     </div>

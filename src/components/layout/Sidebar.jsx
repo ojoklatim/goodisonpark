@@ -100,8 +100,25 @@ export function Sidebar() {
     navigate('/auth/login')
   }
 
-  // Filter navigation by permissions
-  const filteredNav = NAV.filter(group => {
+  const isAdmin = profile?.role === 'company_admin' || profile?.role === 'super_admin'
+
+  // Filter navigation by permissions and role access
+  const filteredNav = NAV.map(group => {
+    const items = group.items.filter(item => {
+      if (isAdmin) return true
+      
+      // Limit navigation items for employees
+      if (group.section === 'Finance' && item.label !== 'Expenses') return false
+      if (group.section === 'People' && !['Leave', 'Training'].includes(item.label)) return false
+      if (group.section === 'Operations' && item.label === 'Approvals') return false
+      if (group.section === 'Analytics') return false
+      if (group.section === 'Communications' && ['Social Media', 'Social Settings'].includes(item.label)) return false
+      
+      return true
+    })
+    return { ...group, items }
+  }).filter(group => {
+    if (group.items.length === 0) return false
     if (group.section === 'Overview') return true
     if (group.section === 'Sales') return can('sales', 'view')
     if (group.section === 'Operations') return can('operations', 'view')
@@ -205,7 +222,7 @@ export function Sidebar() {
 
         {/* Bottom Nav */}
         <div style={{ borderTop: '1px solid var(--gp-border-light)', flexShrink: 0 }}>
-          {can('settings', 'view') && BOTTOM_NAV.map((item) => (
+          {isAdmin && BOTTOM_NAV.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

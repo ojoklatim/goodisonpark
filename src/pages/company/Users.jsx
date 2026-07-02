@@ -35,11 +35,15 @@ export function Users() {
     queryKey: ['profiles', company?.id],
     queryFn: async () => {
       const { data, error } = await insforge
-        .from('profiles')
-        .select(`*, branches(name), auth_users:id(email)`)
+        .from('profiles_view')
+        .select(`*, branches(name)`)
         .eq('company_id', company?.id)
       if (error) throw error
-      return data
+      
+      return data.map(u => ({
+        ...u,
+        auth_users: { email: u.email }
+      }))
     },
     enabled: !!company?.id
   })
@@ -67,22 +71,35 @@ export function Users() {
   // Mutations
   const inviteUser = useMutation({
     mutationFn: async (newData) => {
-      // Create user via admin api if available, otherwise regular sign up
-      // Note: for production, a magic link or admin invite API is better
+      // Check if email already registered in profiles/auth_users
+      const { data: existingProfile, error: profileQueryError } = await insforge
+        .from('profiles')
+        .select('id, auth_users!inner(email)')
+        .eq('auth_users.email', newData.email)
+        .maybeSingle()
+
+      if (profileQueryError) throw profileQueryError
+      if (existingProfile) {
+        throw new Error('A registered user account with this email address already exists.')
+      }
+
+      // Create user via sign up
       const { data, error } = await insforge.auth.signUp({
         email: newData.email,
         password: Math.random().toString(36).slice(-8) + 'A1!' // Temp password
       })
       if (error) throw error
       
-      const { error: profileError } = await insforge.from('profiles').update({
+      const { error: profileError } = await insforge.from('profiles').insert({
+        id: data.user.id,
         company_id: company.id,
         first_name: newData.first_name,
         last_name: newData.last_name,
         role: newData.role,
         department: newData.department,
-        branch_id: newData.branch_id || null
-      }).eq('id', data.user.id)
+        branch_id: newData.branch_id || null,
+        is_active: true
+      })
 
       if (profileError) throw profileError
     },
@@ -176,12 +193,17 @@ export function Users() {
 
       <Modal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} title="Invite User">
         <form onSubmit={(e) => { e.preventDefault(); inviteUser.mutate(formData); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {inviteUser.isError && (
+            <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', fontSize: '14px' }}>
+              {inviteUser.error.message}
+            </div>
+          )}
           <Input label="Email Address" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ flex: 1 }}><Input label="First Name" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required /></div>
             <div style={{ flex: 1 }}><Input label="Last Name" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required /></div>
           </div>
-          <Select label="Role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'company_admin', label: 'Company Admin'}, {value: 'manager', label: 'Manager'}, {value: 'team_leader', label: 'Team Leader'}, {value: 'employee', label: 'Employee'}]} required />
+          <Select label="Role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'employee', label: 'Employee'}, {value: 'company_admin', label: 'Company Admin'}]} required />
           <Select label="Branch (Optional)" value={formData.branch_id} onChange={e => setFormData({...formData, branch_id: e.target.value})} options={[{value: '', label: 'None'}, ...branchOptions]} />
           <Select label="Department (Optional)" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} options={[{value: '', label: 'None'}, ...deptOptions]} />
 
@@ -194,11 +216,16 @@ export function Users() {
 
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit User">
         <form onSubmit={(e) => { e.preventDefault(); updateUser.mutate({ first_name: formData.first_name, last_name: formData.last_name, role: formData.role, department: formData.department, branch_id: formData.branch_id || null }); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {updateUser.isError && (
+            <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', fontSize: '14px' }}>
+              {updateUser.error.message}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ flex: 1 }}><Input label="First Name" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required /></div>
             <div style={{ flex: 1 }}><Input label="Last Name" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required /></div>
           </div>
-          <Select label="Role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'company_admin', label: 'Company Admin'}, {value: 'manager', label: 'Manager'}, {value: 'team_leader', label: 'Team Leader'}, {value: 'employee', label: 'Employee'}]} required />
+          <Select label="Role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'employee', label: 'Employee'}, {value: 'company_admin', label: 'Company Admin'}]} required />
           <Select label="Branch (Optional)" value={formData.branch_id} onChange={e => setFormData({...formData, branch_id: e.target.value})} options={[{value: '', label: 'None'}, ...branchOptions]} />
           <Select label="Department (Optional)" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} options={[{value: '', label: 'None'}, ...deptOptions]} />
 

@@ -48,6 +48,12 @@ CREATE TABLE profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- profiles view to pre-join with auth.users email
+CREATE OR REPLACE VIEW public.profiles_view AS
+SELECT p.*, u.email
+FROM public.profiles p
+LEFT JOIN auth.users u ON p.id = u.id;
+
 -- permissions
 CREATE TABLE role_permissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -59,6 +65,23 @@ CREATE TABLE role_permissions (
   can_edit BOOLEAN DEFAULT FALSE,
   can_delete BOOLEAN DEFAULT FALSE,
   can_export BOOLEAN DEFAULT FALSE
+);
+
+-- employee_invitations
+CREATE TABLE employee_invitations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+  branch_id UUID REFERENCES branches(id),
+  email TEXT UNIQUE NOT NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  phone TEXT,
+  role TEXT NOT NULL DEFAULT 'employee',
+  department TEXT,
+  job_title TEXT,
+  employee_code TEXT,
+  date_joined DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ### Sales Pipeline
@@ -509,20 +532,20 @@ CREATE TABLE social_media_metrics (
 
 -- ## RLS POLICIES
 
-Enable RLS on all tables listed above. Apply these policies:
-
-For each tenant table with company_id:
-
-1. SELECT policy: users can only see rows where company_id = (SELECT company_id FROM profiles WHERE id = auth.uid())
-2. INSERT policy: users can only insert rows with their own company_id
-3. UPDATE/DELETE: managers and above can update; only company_admin can delete (check role in profiles)
-
-Special policies:
-- profiles: users can view all profiles in their company; can only update their own profile (unless manager+)
-- notifications: each user sees only their own notifications
-- messages: users see only messages where sender_id = auth.uid() OR recipient_id = auth.uid()
-
-Create a helper function:
+-- Enable RLS on all tables listed above. Apply these policies:
+-- 
+-- For each tenant table with company_id:
+-- 
+-- 1. SELECT policy: users can only see rows where company_id = (SELECT company_id FROM profiles WHERE id = auth.uid())
+-- 2. INSERT policy: users can only insert rows with their own company_id
+-- 3. UPDATE/DELETE: managers and above can update; only company_admin can delete (check role in profiles)
+-- 
+-- Special policies:
+-- - profiles: users can view all profiles in their company; can only update their own profile (unless manager+)
+-- - notifications: each user sees only their own notifications
+-- - messages: users see only messages where sender_id = auth.uid() OR recipient_id = auth.uid()
+-- 
+-- Create a helper function:
   CREATE OR REPLACE FUNCTION get_my_company_id()
   RETURNS UUID AS $$
     SELECT company_id FROM profiles WHERE id = auth.uid() LIMIT 1;
@@ -532,16 +555,32 @@ Create a helper function:
 
 -- ## TRIGGERS
 
-1. Auto-update updated_at on companies, profiles, leads, deals, tasks:
+-- 1. Auto-update updated_at on companies, profiles, leads, deals, tasks:
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
-(Apply to each relevant table)
+-- (Apply to each relevant table)
 
-2. On deal stage → 'closed_won': auto-create client record if not exists, update total_deal_value
+-- 2. On deal stage → 'closed_won': auto-create client record if not exists, update total_deal_value
 
-3. On leave_request created: auto-insert into approvals table with reference
+-- 3. On leave_request created: auto-insert into approvals table with reference
 
-4. On expense created with amount > threshold: auto-insert into approvals
+-- 4. On expense created with amount > threshold: auto-insert into approvals
+
+-- 5. Prevent inviting emails that already have registered accounts in auth.users:
+CREATE OR REPLACE FUNCTION check_invite_email_uniqueness()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM auth.users WHERE email = NEW.email) THEN
+    RAISE EXCEPTION 'An account with the email % already exists in the system.', NEW.email;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tr_check_invite_email_uniqueness
+BEFORE INSERT OR UPDATE OF email ON employee_invitations
+FOR EACH ROW
+EXECUTE FUNCTION check_invite_email_uniqueness();
 
 ---
 

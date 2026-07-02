@@ -35,8 +35,8 @@ export function Directory() {
     queryFn: async () => {
       // 1. Fetch active profiles
       const { data: activeProfiles, error: activeErr } = await insforge
-        .from('profiles')
-        .select(`*, branches(name), auth_users:id(email)`)
+        .from('profiles_view')
+        .select(`*, branches(name)`)
         .eq('company_id', company?.id)
         .order('first_name', { ascending: true })
       if (activeErr) throw activeErr
@@ -69,7 +69,11 @@ export function Directory() {
       // 4. Combine them
       return [
         ...pendingEmployees,
-        ...activeProfiles.map(p => ({ ...p, status: p.is_active ? 'active' : 'inactive' }))
+        ...activeProfiles.map(p => ({ 
+          ...p, 
+          status: p.is_active ? 'active' : 'inactive',
+          auth_users: { email: p.email }
+        }))
       ]
     },
     enabled: !!company?.id
@@ -97,6 +101,31 @@ export function Directory() {
 
   const addEmployee = useMutation({
     mutationFn: async (newData) => {
+      // 1. Check if invitation already exists
+      const { data: existingInvite, error: inviteQueryError } = await insforge
+        .from('employee_invitations')
+        .select('id')
+        .eq('email', newData.email)
+        .maybeSingle()
+      
+      if (inviteQueryError) throw inviteQueryError
+      if (existingInvite) {
+        throw new Error('A pending invitation for this email address already exists.')
+      }
+
+      // 2. Check if email is already registered in profiles/auth_users
+      const { data: existingProfile, error: profileQueryError } = await insforge
+        .from('profiles')
+        .select('id, auth_users!inner(email)')
+        .eq('auth_users.email', newData.email)
+        .maybeSingle()
+
+      if (profileQueryError) throw profileQueryError
+      if (existingProfile) {
+        throw new Error('A registered employee account with this email address already exists.')
+      }
+
+      // 3. Insert the invitation
       const { error } = await insforge.from('employee_invitations').insert([{
         company_id: company.id,
         first_name: newData.first_name,
@@ -217,7 +246,7 @@ export function Directory() {
           <Select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} options={[{value: '', label: 'All Departments'}, ...departments.map(d => ({value: d, label: d}))]} />
         </div>
         <div style={{ width: '160px' }}>
-          <Select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} options={[{value: '', label: 'All Roles'}, {value: 'company_admin', label: 'Company Admin'}, {value: 'manager', label: 'Manager'}, {value: 'team_leader', label: 'Team Leader'}, {value: 'employee', label: 'Employee'}]} />
+          <Select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} options={[{value: '', label: 'All Roles'}, {value: 'company_admin', label: 'Company Admin'}, {value: 'employee', label: 'Employee'}]} />
         </div>
         <div style={{ width: '160px' }}>
           <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} options={[{value: 'all', label: 'All Statuses'}, {value: 'active', label: 'Active'}, {value: 'inactive', label: 'Inactive'}]} />
@@ -228,7 +257,11 @@ export function Directory() {
 
       <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Add Employee">
         <form onSubmit={e => { e.preventDefault(); addEmployee.mutate(formData); }} style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '600px' }}>
-          
+          {addEmployee.isError && (
+            <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', fontSize: '14px' }}>
+              {addEmployee.error.message}
+            </div>
+          )}
           <div>
             <h4 style={{ fontSize: '14px', fontWeight: 600, color: "var(--gp-black)", margin: '0 0 12px 0', borderBottom: "1px solid var(--gp-border-light)", paddingBottom: '8px' }}>Personal Details</h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -246,7 +279,7 @@ export function Directory() {
               <Input label="Job Title" value={formData.job_title} onChange={e => setFormData({...formData, job_title: e.target.value})} />
               <Select label="Department" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} options={[{value: '', label: 'None'}, ...departments.map(d => ({value: d, label: d}))]} />
               <Select label="Branch" value={formData.branch_id} onChange={e => setFormData({...formData, branch_id: e.target.value})} options={[{value: '', label: 'None'}, ...branches.map(b => ({value: b.id, label: b.name}))]} />
-              <Select label="Role*" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'company_admin', label: 'Company Admin'}, {value: 'manager', label: 'Manager'}, {value: 'team_leader', label: 'Team Leader'}, {value: 'employee', label: 'Employee'}]} required />
+              <Select label="Role*" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'employee', label: 'Employee'}, {value: 'company_admin', label: 'Company Admin'}]} required />
               <Input label="Date Joined" type="date" value={formData.date_joined} onChange={e => setFormData({...formData, date_joined: e.target.value})} />
             </div>
           </div>

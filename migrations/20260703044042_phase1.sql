@@ -1,5 +1,5 @@
 
-CREATE TABLE companies (
+CREATE TABLE IF NOT EXISTS companies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   slug TEXT UNIQUE NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE companies (
 );
 
 
-CREATE TABLE branches (
+CREATE TABLE IF NOT EXISTS branches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -30,7 +30,7 @@ CREATE TABLE branches (
 );
 
 
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   branch_id UUID REFERENCES branches(id),
@@ -49,7 +49,7 @@ CREATE TABLE profiles (
 );
 
 
-CREATE TABLE role_permissions (
+CREATE TABLE IF NOT EXISTS role_permissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   role TEXT NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE role_permissions (
 
 
 
-CREATE TABLE leads (
+CREATE TABLE IF NOT EXISTS leads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   assigned_to UUID REFERENCES profiles(id),
@@ -82,7 +82,7 @@ CREATE TABLE leads (
 );
 
 
-CREATE TABLE deals (
+CREATE TABLE IF NOT EXISTS deals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   lead_id UUID REFERENCES leads(id),
@@ -101,7 +101,7 @@ CREATE TABLE deals (
 );
 
 
-CREATE TABLE deal_activities (
+CREATE TABLE IF NOT EXISTS deal_activities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   deal_id UUID REFERENCES deals(id) ON DELETE CASCADE,
   user_id UUID REFERENCES profiles(id),
@@ -114,7 +114,7 @@ CREATE TABLE deal_activities (
 );
 
 
-CREATE TABLE clients (
+CREATE TABLE IF NOT EXISTS clients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   lead_id UUID REFERENCES leads(id),
@@ -130,7 +130,7 @@ CREATE TABLE clients (
 );
 
 
-CREATE TABLE quotations (
+CREATE TABLE IF NOT EXISTS quotations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   deal_id UUID REFERENCES deals(id),
@@ -150,7 +150,7 @@ CREATE TABLE quotations (
 );
 
 
-CREATE TABLE invoices (
+CREATE TABLE IF NOT EXISTS invoices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   quotation_id UUID REFERENCES quotations(id),
@@ -172,7 +172,7 @@ CREATE TABLE invoices (
 );
 
 
-CREATE TABLE commissions (
+CREATE TABLE IF NOT EXISTS commissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   deal_id UUID REFERENCES deals(id),
@@ -186,7 +186,7 @@ CREATE TABLE commissions (
 
 
 
-CREATE TABLE kpis (
+CREATE TABLE IF NOT EXISTS kpis (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   profile_id UUID REFERENCES profiles(id),
@@ -202,7 +202,7 @@ CREATE TABLE kpis (
 );
 
 
-CREATE TABLE performance_reviews (
+CREATE TABLE IF NOT EXISTS performance_reviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   profile_id UUID REFERENCES profiles(id),
@@ -217,7 +217,7 @@ CREATE TABLE performance_reviews (
 );
 
 
-CREATE TABLE attendance (
+CREATE TABLE IF NOT EXISTS attendance (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   profile_id UUID REFERENCES profiles(id),
@@ -229,7 +229,7 @@ CREATE TABLE attendance (
 );
 
 
-CREATE TABLE goals (
+CREATE TABLE IF NOT EXISTS goals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   profile_id UUID REFERENCES profiles(id),
@@ -243,7 +243,7 @@ CREATE TABLE goals (
 );
 
 
-CREATE TABLE rewards_penalties (
+CREATE TABLE IF NOT EXISTS rewards_penalties (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   profile_id UUID REFERENCES profiles(id),
@@ -259,7 +259,7 @@ CREATE TABLE rewards_penalties (
 
 
 
-CREATE TABLE departments (
+CREATE TABLE IF NOT EXISTS departments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -269,7 +269,7 @@ CREATE TABLE departments (
 );
 
 
-CREATE TABLE projects (
+CREATE TABLE IF NOT EXISTS projects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   department_id UUID REFERENCES departments(id),
@@ -285,7 +285,7 @@ CREATE TABLE projects (
 );
 
 
-CREATE TABLE tasks (
+CREATE TABLE IF NOT EXISTS tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   project_id UUID REFERENCES projects(id) ON DELETE SET NULL,
@@ -306,7 +306,7 @@ CREATE TABLE tasks (
 );
 
 
-CREATE TABLE approvals (
+CREATE TABLE IF NOT EXISTS approvals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   requested_by UUID REFERENCES profiles(id),
@@ -321,7 +321,7 @@ CREATE TABLE approvals (
 );
 
 
-CREATE TABLE documents (
+CREATE TABLE IF NOT EXISTS documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   uploaded_by UUID REFERENCES profiles(id),
@@ -337,7 +337,7 @@ CREATE TABLE documents (
 );
 
 
-CREATE TABLE sops (
+CREATE TABLE IF NOT EXISTS sops (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   department_id UUID REFERENCES departments(id),
@@ -353,7 +353,7 @@ CREATE TABLE sops (
 
 
 
-CREATE TABLE leave_requests (
+CREATE TABLE IF NOT EXISTS leave_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   profile_id UUID REFERENCES profiles(id),
@@ -368,7 +368,7 @@ CREATE TABLE leave_requests (
 );
 
 
-CREATE TABLE payroll (
+CREATE TABLE IF NOT EXISTS payroll (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   profile_id UUID REFERENCES profiles(id),
@@ -386,7 +386,7 @@ CREATE TABLE payroll (
 );
 
 
-CREATE TABLE announcements (
+CREATE TABLE IF NOT EXISTS announcements (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   created_by UUID REFERENCES profiles(id),
@@ -400,7 +400,7 @@ CREATE TABLE announcements (
 );
 
 
-CREATE TABLE training_records (
+CREATE TABLE IF NOT EXISTS training_records (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   profile_id UUID REFERENCES profiles(id),
@@ -415,7 +415,7 @@ CREATE TABLE training_records (
 
 
 
-CREATE TABLE expenses (
+CREATE TABLE IF NOT EXISTS expenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   submitted_by UUID REFERENCES profiles(id),
@@ -432,7 +432,7 @@ CREATE TABLE expenses (
 );
 
 
-CREATE TABLE budgets (
+CREATE TABLE IF NOT EXISTS budgets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   department_id UUID REFERENCES departments(id),
@@ -448,7 +448,7 @@ CREATE TABLE budgets (
 
 
 
-CREATE TABLE messages (
+CREATE TABLE IF NOT EXISTS messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   sender_id UUID REFERENCES profiles(id),
@@ -460,7 +460,7 @@ CREATE TABLE messages (
 );
 
 
-CREATE TABLE notifications (
+CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
@@ -473,7 +473,7 @@ CREATE TABLE notifications (
 );
 
 
-CREATE TABLE social_media_accounts (
+CREATE TABLE IF NOT EXISTS social_media_accounts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   platform TEXT NOT NULL CHECK (platform IN ('youtube','twitter_x','instagram','tiktok','linkedin')),
@@ -487,7 +487,7 @@ CREATE TABLE social_media_accounts (
 );
 
 
-CREATE TABLE social_media_metrics (
+CREATE TABLE IF NOT EXISTS social_media_metrics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   account_id UUID REFERENCES social_media_accounts(id) ON DELETE CASCADE,
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
@@ -509,20 +509,20 @@ CREATE TABLE social_media_metrics (
 
 
 
-Enable RLS on all tables listed above. Apply these policies:
-
-For each tenant table with company_id:
-
-1. SELECT policy: users can only see rows where company_id = (SELECT company_id FROM profiles WHERE id = auth.uid())
-2. INSERT policy: users can only insert rows with their own company_id
-3. UPDATE/DELETE: managers and above can update; only company_admin can delete (check role in profiles)
-
-Special policies:
-- profiles: users can view all profiles in their company; can only update their own profile (unless manager+)
-- notifications: each user sees only their own notifications
-- messages: users see only messages where sender_id = auth.uid() OR recipient_id = auth.uid()
-
-Create a helper function:
+-- Enable RLS on all tables listed above. Apply these policies:
+-- 
+-- For each tenant table with company_id:
+-- 
+-- 1. SELECT policy: users can only see rows where company_id = (SELECT company_id FROM profiles WHERE id = auth.uid())
+-- 2. INSERT policy: users can only insert rows with their own company_id
+-- 3. UPDATE/DELETE: managers and above can update; only company_admin can delete (check role in profiles)
+-- 
+-- Special policies:
+-- - profiles: users can view all profiles in their company; can only update their own profile (unless manager+)
+-- - notifications: each user sees only their own notifications
+-- - messages: users see only messages where sender_id = auth.uid() OR recipient_id = auth.uid()
+-- 
+-- Create a helper function:
   CREATE OR REPLACE FUNCTION get_my_company_id()
   RETURNS UUID AS $$
     SELECT company_id FROM profiles WHERE id = auth.uid() LIMIT 1;
@@ -532,28 +532,28 @@ Create a helper function:
 
 
 
-1. Auto-update updated_at on companies, profiles, leads, deals, tasks:
+-- 1. Auto-update updated_at on companies, profiles, leads, deals, tasks:
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql;
-(Apply to each relevant table)
+-- (Apply to each relevant table)
 
-2. On deal stage → 'closed_won': auto-create client record if not exists, update total_deal_value
+-- 2. On deal stage → 'closed_won': auto-create client record if not exists, update total_deal_value
 
-3. On leave_request created: auto-insert into approvals table with reference
+-- 3. On leave_request created: auto-insert into approvals table with reference
 
-4. On expense created with amount > threshold: auto-insert into approvals
-
-
+-- 4. On expense created with amount > threshold: auto-insert into approvals
 
 
 
-CREATE INDEX ON leads(company_id, status);
-CREATE INDEX ON deals(company_id, stage);
-CREATE INDEX ON tasks(company_id, assigned_to, status);
-CREATE INDEX ON attendance(company_id, profile_id, date);
-CREATE INDEX ON expenses(company_id, status);
-CREATE INDEX ON notifications(user_id, is_read);
-CREATE INDEX ON social_media_metrics(account_id, date DESC);
+
+
+CREATE INDEX IF NOT EXISTS leads_company_id_status_idx ON leads(company_id, status);
+CREATE INDEX IF NOT EXISTS deals_company_id_stage_idx ON deals(company_id, stage);
+CREATE INDEX IF NOT EXISTS tasks_company_id_assigned_to_status_idx ON tasks(company_id, assigned_to, status);
+CREATE INDEX IF NOT EXISTS attendance_company_id_profile_id_date_idx ON attendance(company_id, profile_id, date);
+CREATE INDEX IF NOT EXISTS expenses_company_id_status_idx ON expenses(company_id, status);
+CREATE INDEX IF NOT EXISTS notifications_user_id_is_read_idx ON notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS social_media_metrics_account_id_date_idx ON social_media_metrics(account_id, date DESC);
 
 
 

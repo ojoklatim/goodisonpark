@@ -1,14 +1,15 @@
 import React, { useEffect } from 'react'
 import { X } from 'lucide-react'
 
-export function Modal({ open, onClose, title, children, width = 520, footer }) {
+export function Modal({ open, isOpen, onClose, title, children, width = 520, footer }) {
+  const showModal = open || isOpen
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose?.() }
-    if (open) document.addEventListener('keydown', onKey)
+    if (showModal) document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  }, [showModal, onClose])
 
-  if (!open) return null
+  if (!showModal) return null
 
   return (
     <div
