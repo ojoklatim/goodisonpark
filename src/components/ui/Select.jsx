@@ -41,12 +41,12 @@ export function Select({
           }}
           {...props}
         >
-          {placeholder && <option value="">{placeholder}</option>}
+          {placeholder && <option style={{ background: 'var(--gp-card)', color: 'var(--gp-black)' }} value="">{placeholder}</option>}
           {options.map((opt) =>
             typeof opt === 'string' ? (
-              <option key={opt} value={opt}>{opt}</option>
+              <option style={{ background: 'var(--gp-card)', color: 'var(--gp-black)' }} key={opt} value={opt}>{opt}</option>
             ) : (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+              <option style={{ background: 'var(--gp-card)', color: 'var(--gp-black)' }} key={opt.value} value={opt.value}>{opt.label}</option>
             )
           )}
         </select>

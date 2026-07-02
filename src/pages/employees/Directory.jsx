@@ -242,9 +242,9 @@ export function Directory() {
 
       <DataTable data={filteredEmployees} columns={columns} isLoading={isLoading} />
 
-      <Modal isOpen={isAddOpen} onClose={() => { setIsAddOpen(false); setCreatedInvite(null); addEmployee.reset(); }} title="Add Employee">
+      <Modal isOpen={isAddOpen} onClose={() => { setIsAddOpen(false); setCreatedInvite(null); addEmployee.reset(); }} title="Add Employee" width={600}>
         {createdInvite ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '12px 0', width: '500px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '12px 0', width: '100%' }}>
             <div style={{ padding: '16px', background: '#ECFDF5', border: '1px solid #10B981', color: '#065F46' }}>
               <h4 style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Invitation Created Successfully!</h4>
               <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.5 }}>
@@ -290,7 +290,7 @@ export function Directory() {
             </div>
           </div>
         ) : (
-          <form onSubmit={e => { e.preventDefault(); addEmployee.mutate(formData, { onSuccess: (data) => setCreatedInvite(data) }); }} style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '600px' }}>
+          <form onSubmit={e => { e.preventDefault(); addEmployee.mutate(formData, { onSuccess: (data) => setCreatedInvite(data) }); }} style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
             {addEmployee.isError && (
               <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', fontSize: '14px' }}>
                 {addEmployee.error.message}
