@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { insforge } from '../../lib/insforge'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { useCreateInvitation } from '../../hooks/useCreateInvitation'
 import { DataTable } from '../../components/ui/DataTable'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
@@ -20,6 +21,7 @@ export function Users() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [editingUser, setEditingUser] = useState(null)
   const [userToDeactivate, setUserToDeactivate] = useState(null)
+  const [createdInvite, setCreatedInvite] = useState(null)
 
   const [formData, setFormData] = useState({
     email: '',
@@ -69,46 +71,7 @@ export function Users() {
   })
 
   // Mutations
-  const inviteUser = useMutation({
-    mutationFn: async (newData) => {
-      // Check if email already registered in profiles/auth_users
-      const { data: existingProfile, error: profileQueryError } = await insforge
-        .from('profiles')
-        .select('id, auth_users!inner(email)')
-        .eq('auth_users.email', newData.email)
-        .maybeSingle()
-
-      if (profileQueryError) throw profileQueryError
-      if (existingProfile) {
-        throw new Error('A registered user account with this email address already exists.')
-      }
-
-      // Create user via sign up
-      const { data, error } = await insforge.auth.signUp({
-        email: newData.email,
-        password: Math.random().toString(36).slice(-8) + 'A1!' // Temp password
-      })
-      if (error) throw error
-      
-      const { error: profileError } = await insforge.from('profiles').insert({
-        id: data.user.id,
-        company_id: company.id,
-        first_name: newData.first_name,
-        last_name: newData.last_name,
-        role: newData.role,
-        department: newData.department,
-        branch_id: newData.branch_id || null,
-        is_active: true
-      })
-
-      if (profileError) throw profileError
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['profiles', company?.id])
-      setIsInviteOpen(false)
-      setFormData({ email: '', first_name: '', last_name: '', role: 'employee', department: '', branch_id: '' })
-    }
-  })
+  const inviteUser = useCreateInvitation()
 
   const updateUser = useMutation({
     mutationFn: async (newData) => {
@@ -191,27 +154,72 @@ export function Users() {
         <DataTable data={users} columns={columns} isLoading={isLoading} />
       </div>
 
-      <Modal isOpen={isInviteOpen} onClose={() => setIsInviteOpen(false)} title="Invite User">
-        <form onSubmit={(e) => { e.preventDefault(); inviteUser.mutate(formData); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {inviteUser.isError && (
-            <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', fontSize: '14px' }}>
-              {inviteUser.error.message}
+      <Modal isOpen={isInviteOpen} onClose={() => { setIsInviteOpen(false); setCreatedInvite(null); inviteUser.reset(); }} title="Invite User">
+        {createdInvite ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '12px 0', width: '450px' }}>
+            <div style={{ padding: '16px', background: '#ECFDF5', border: '1px solid #10B981', color: '#065F46' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Invitation Created Successfully!</h4>
+              <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.5 }}>
+                An invitation email has been sent to <strong>{createdInvite.email}</strong>. 
+                You can also manually copy and share the link below:
+              </p>
             </div>
-          )}
-          <Input label="Email Address" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <div style={{ flex: 1 }}><Input label="First Name" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required /></div>
-            <div style={{ flex: 1 }}><Input label="Last Name" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required /></div>
-          </div>
-          <Select label="Role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'employee', label: 'Employee'}, {value: 'company_admin', label: 'Company Admin'}]} required />
-          <Select label="Branch (Optional)" value={formData.branch_id} onChange={e => setFormData({...formData, branch_id: e.target.value})} options={[{value: '', label: 'None'}, ...branchOptions]} />
-          <Select label="Department (Optional)" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} options={[{value: '', label: 'None'}, ...deptOptions]} />
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-            <Button type="button" variant="secondary" onClick={() => setIsInviteOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={inviteUser.isPending}>{inviteUser.isPending ? 'Inviting...' : 'Send Invite'}</Button>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input 
+                type="text" 
+                readOnly 
+                value={`${window.location.origin}/auth/register?token=${createdInvite.token}`} 
+                style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--gp-border-light)', background: '#F9FAFB', fontSize: '13px', color: 'var(--gp-muted)' }}
+                onClick={(e) => e.target.select()}
+              />
+              <Button 
+                variant="secondary" 
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/auth/register?token=${createdInvite.token}`);
+                  alert('Copied to clipboard!');
+                }}
+              >
+                Copy Link
+              </Button>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+              <Button 
+                variant="primary" 
+                onClick={() => {
+                  setIsInviteOpen(false);
+                  setCreatedInvite(null);
+                  inviteUser.reset();
+                  setFormData({ email: '', first_name: '', last_name: '', role: 'employee', department: '', branch_id: '' });
+                }}
+              >
+                Done
+              </Button>
+            </div>
           </div>
-        </form>
+        ) : (
+          <form onSubmit={(e) => { e.preventDefault(); inviteUser.mutate(formData, { onSuccess: (data) => setCreatedInvite(data) }); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {inviteUser.isError && (
+              <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', fontSize: '14px' }}>
+                {inviteUser.error.message}
+              </div>
+            )}
+            <Input label="Email Address" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <div style={{ flex: 1 }}><Input label="First Name" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required /></div>
+              <div style={{ flex: 1 }}><Input label="Last Name" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required /></div>
+            </div>
+            <Select label="Role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'employee', label: 'Employee'}, {value: 'team_leader', label: 'Team Leader'}, {value: 'manager', label: 'Manager'}, {value: 'company_admin', label: 'Company Admin'}]} required />
+            <Select label="Branch (Optional)" value={formData.branch_id} onChange={e => setFormData({...formData, branch_id: e.target.value})} options={[{value: '', label: 'None'}, ...branchOptions]} />
+            <Select label="Department (Optional)" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} options={[{value: '', label: 'None'}, ...deptOptions]} />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+              <Button type="button" variant="secondary" onClick={() => { setIsInviteOpen(false); inviteUser.reset(); }}>Cancel</Button>
+              <Button type="submit" variant="primary" disabled={inviteUser.isPending}>{inviteUser.isPending ? 'Inviting...' : 'Send Invite'}</Button>
+            </div>
+          </form>
+        )}
       </Modal>
 
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit User">
@@ -225,7 +233,7 @@ export function Users() {
             <div style={{ flex: 1 }}><Input label="First Name" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required /></div>
             <div style={{ flex: 1 }}><Input label="Last Name" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required /></div>
           </div>
-          <Select label="Role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'employee', label: 'Employee'}, {value: 'company_admin', label: 'Company Admin'}]} required />
+          <Select label="Role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'employee', label: 'Employee'}, {value: 'team_leader', label: 'Team Leader'}, {value: 'manager', label: 'Manager'}, {value: 'company_admin', label: 'Company Admin'}]} required />
           <Select label="Branch (Optional)" value={formData.branch_id} onChange={e => setFormData({...formData, branch_id: e.target.value})} options={[{value: '', label: 'None'}, ...branchOptions]} />
           <Select label="Department (Optional)" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} options={[{value: '', label: 'None'}, ...deptOptions]} />
 

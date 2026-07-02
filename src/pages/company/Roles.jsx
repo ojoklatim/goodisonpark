@@ -9,6 +9,8 @@ import { Spinner } from '../../components/ui/Spinner'
 
 const ROLES = [
   { id: 'company_admin', title: 'Company Admin', desc: 'Full access to all modules and settings.' },
+  { id: 'manager', title: 'Manager', desc: 'Can manage teams, approve requests, view reports.' },
+  { id: 'team_leader', title: 'Team Leader', desc: 'Can manage their team tasks and basic operations.' },
   { id: 'employee', title: 'Employee', desc: 'Basic access to their own tasks, leaves, and profile.' }
 ]
 

@@ -81,6 +81,9 @@ CREATE TABLE employee_invitations (
   job_title TEXT,
   employee_code TEXT,
   date_joined DATE,
+  token UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '7 days'),
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'expired')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

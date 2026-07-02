@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { insforge } from '../../lib/insforge'
 import { PageHeader } from '../../components/ui/PageHeader'
+import { useCreateInvitation } from '../../hooks/useCreateInvitation'
 import { DataTable } from '../../components/ui/DataTable'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
@@ -23,6 +24,7 @@ export function Directory() {
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [createdInvite, setCreatedInvite] = useState(null)
 
   const [formData, setFormData] = useState({
     first_name: '', last_name: '', phone: '', email: '', employee_code: '',
@@ -99,57 +101,7 @@ export function Directory() {
     enabled: !!company?.id
   })
 
-  const addEmployee = useMutation({
-    mutationFn: async (newData) => {
-      // 1. Check if invitation already exists
-      const { data: existingInvite, error: inviteQueryError } = await insforge
-        .from('employee_invitations')
-        .select('id')
-        .eq('email', newData.email)
-        .maybeSingle()
-      
-      if (inviteQueryError) throw inviteQueryError
-      if (existingInvite) {
-        throw new Error('A pending invitation for this email address already exists.')
-      }
-
-      // 2. Check if email is already registered in profiles/auth_users
-      const { data: existingProfile, error: profileQueryError } = await insforge
-        .from('profiles')
-        .select('id, auth_users!inner(email)')
-        .eq('auth_users.email', newData.email)
-        .maybeSingle()
-
-      if (profileQueryError) throw profileQueryError
-      if (existingProfile) {
-        throw new Error('A registered employee account with this email address already exists.')
-      }
-
-      // 3. Insert the invitation
-      const { error } = await insforge.from('employee_invitations').insert([{
-        company_id: company.id,
-        first_name: newData.first_name,
-        last_name: newData.last_name,
-        phone: newData.phone || null,
-        email: newData.email,
-        employee_code: newData.employee_code || null,
-        department: newData.department || null,
-        job_title: newData.job_title || null,
-        branch_id: newData.branch_id || null,
-        role: newData.role,
-        date_joined: newData.date_joined || null
-      }])
-      if (error) throw error
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['employees', company?.id])
-      setIsAddOpen(false)
-      setFormData({
-        first_name: '', last_name: '', phone: '', email: '', employee_code: '',
-        department: '', job_title: '', branch_id: '', role: 'employee', date_joined: new Date().toISOString().split('T')[0]
-      })
-    }
-  })
+  const addEmployee = useCreateInvitation()
 
   const filteredEmployees = employees.filter(emp => {
     const s = search.toLowerCase()
@@ -246,7 +198,7 @@ export function Directory() {
           <Select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} options={[{value: '', label: 'All Departments'}, ...departments.map(d => ({value: d, label: d}))]} />
         </div>
         <div style={{ width: '160px' }}>
-          <Select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} options={[{value: '', label: 'All Roles'}, {value: 'company_admin', label: 'Company Admin'}, {value: 'employee', label: 'Employee'}]} />
+          <Select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} options={[{value: '', label: 'All Roles'}, {value: 'company_admin', label: 'Company Admin'}, {value: 'manager', label: 'Manager'}, {value: 'team_leader', label: 'Team Leader'}, {value: 'employee', label: 'Employee'}]} />
         </div>
         <div style={{ width: '160px' }}>
           <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} options={[{value: 'all', label: 'All Statuses'}, {value: 'active', label: 'Active'}, {value: 'inactive', label: 'Inactive'}]} />
@@ -255,40 +207,88 @@ export function Directory() {
 
       <DataTable data={filteredEmployees} columns={columns} isLoading={isLoading} />
 
-      <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Add Employee">
-        <form onSubmit={e => { e.preventDefault(); addEmployee.mutate(formData); }} style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '600px' }}>
-          {addEmployee.isError && (
-            <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', fontSize: '14px' }}>
-              {addEmployee.error.message}
+      <Modal isOpen={isAddOpen} onClose={() => { setIsAddOpen(false); setCreatedInvite(null); addEmployee.reset(); }} title="Add Employee">
+        {createdInvite ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '12px 0', width: '500px' }}>
+            <div style={{ padding: '16px', background: '#ECFDF5', border: '1px solid #10B981', color: '#065F46' }}>
+              <h4 style={{ margin: '0 0 8px 0', fontWeight: 600 }}>Invitation Created Successfully!</h4>
+              <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.5 }}>
+                An invitation email has been sent to <strong>{createdInvite.email}</strong>. 
+                You can also manually copy and share the link below:
+              </p>
             </div>
-          )}
-          <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 600, color: "var(--gp-black)", margin: '0 0 12px 0', borderBottom: "1px solid var(--gp-border-light)", paddingBottom: '8px' }}>Personal Details</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <Input label="First Name*" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required />
-              <Input label="Last Name*" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required />
-              <Input label="Phone" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
-            </div>
-          </div>
 
-          <div>
-            <h4 style={{ fontSize: '14px', fontWeight: 600, color: "var(--gp-black)", margin: '0 0 12px 0', borderBottom: "1px solid var(--gp-border-light)", paddingBottom: '8px' }}>Work Details</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <Input label="Email* (for login)" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
-              <Input label="Employee Code" value={formData.employee_code} onChange={e => setFormData({...formData, employee_code: e.target.value})} />
-              <Input label="Job Title" value={formData.job_title} onChange={e => setFormData({...formData, job_title: e.target.value})} />
-              <Select label="Department" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} options={[{value: '', label: 'None'}, ...departments.map(d => ({value: d, label: d}))]} />
-              <Select label="Branch" value={formData.branch_id} onChange={e => setFormData({...formData, branch_id: e.target.value})} options={[{value: '', label: 'None'}, ...branches.map(b => ({value: b.id, label: b.name}))]} />
-              <Select label="Role*" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'employee', label: 'Employee'}, {value: 'company_admin', label: 'Company Admin'}]} required />
-              <Input label="Date Joined" type="date" value={formData.date_joined} onChange={e => setFormData({...formData, date_joined: e.target.value})} />
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input 
+                type="text" 
+                readOnly 
+                value={`${window.location.origin}/auth/register?token=${createdInvite.token}`} 
+                style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--gp-border-light)', background: '#F9FAFB', fontSize: '13px', color: 'var(--gp-muted)' }}
+                onClick={(e) => e.target.select()}
+              />
+              <Button 
+                variant="secondary" 
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/auth/register?token=${createdInvite.token}`);
+                  alert('Copied to clipboard!');
+                }}
+              >
+                Copy Link
+              </Button>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+              <Button 
+                variant="primary" 
+                onClick={() => {
+                  setIsAddOpen(false);
+                  setCreatedInvite(null);
+                  addEmployee.reset();
+                  setFormData({
+                    first_name: '', last_name: '', phone: '', email: '', employee_code: '',
+                    department: '', job_title: '', branch_id: '', role: 'employee', date_joined: new Date().toISOString().split('T')[0]
+                  });
+                }}
+              >
+                Done
+              </Button>
             </div>
           </div>
+        ) : (
+          <form onSubmit={e => { e.preventDefault(); addEmployee.mutate(formData, { onSuccess: (data) => setCreatedInvite(data) }); }} style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '600px' }}>
+            {addEmployee.isError && (
+              <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', fontSize: '14px' }}>
+                {addEmployee.error.message}
+              </div>
+            )}
+            <div>
+              <h4 style={{ fontSize: '14px', fontWeight: 600, color: "var(--gp-black)", margin: '0 0 12px 0', borderBottom: "1px solid var(--gp-border-light)", paddingBottom: '8px' }}>Personal Details</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <Input label="First Name*" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required />
+                <Input label="Last Name*" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required />
+                <Input label="Phone" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+              </div>
+            </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-            <Button type="button" variant="secondary" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={addEmployee.isPending}>{addEmployee.isPending ? 'Saving...' : 'Add Employee'}</Button>
-          </div>
-        </form>
+            <div>
+              <h4 style={{ fontSize: '14px', fontWeight: 600, color: "var(--gp-black)", margin: '0 0 12px 0', borderBottom: "1px solid var(--gp-border-light)", paddingBottom: '8px' }}>Work Details</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <Input label="Email* (for login)" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
+                <Input label="Employee Code" value={formData.employee_code} onChange={e => setFormData({...formData, employee_code: e.target.value})} />
+                <Input label="Job Title" value={formData.job_title} onChange={e => setFormData({...formData, job_title: e.target.value})} />
+                <Select label="Department" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} options={[{value: '', label: 'None'}, ...departments.map(d => ({value: d, label: d}))]} />
+                <Select label="Branch" value={formData.branch_id} onChange={e => setFormData({...formData, branch_id: e.target.value})} options={[{value: '', label: 'None'}, ...branches.map(b => ({value: b.id, label: b.name}))]} />
+                <Select label="Role*" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'employee', label: 'Employee'}, {value: 'team_leader', label: 'Team Leader'}, {value: 'manager', label: 'Manager'}, {value: 'company_admin', label: 'Company Admin'}]} required />
+                <Input label="Date Joined" type="date" value={formData.date_joined} onChange={e => setFormData({...formData, date_joined: e.target.value})} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+              <Button type="button" variant="secondary" onClick={() => { setIsAddOpen(false); addEmployee.reset(); }}>Cancel</Button>
+              <Button type="submit" variant="primary" disabled={addEmployee.isPending}>{addEmployee.isPending ? 'Saving...' : 'Add Employee'}</Button>
+            </div>
+          </form>
+        )}
       </Modal>
     </div>
   )

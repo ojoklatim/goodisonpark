@@ -1,14 +1,22 @@
-import React, { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { insforge } from '../../lib/insforge'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Logo } from '../../components/ui/Logo'
+import { Spinner } from '../../components/ui/Spinner'
 
 export function Register() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get('token')
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  
+  const [invite, setInvite] = useState(null)
+  const [inviteLoading, setInviteLoading] = useState(true)
+  const [inviteError, setInviteError] = useState(null)
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -17,6 +25,52 @@ export function Register() {
     password: '',
     confirmPassword: ''
   })
+
+  useEffect(() => {
+    async function validateToken() {
+      if (!token) {
+        setInviteError("This invite link is invalid or has expired. Contact your administrator.")
+        setInviteLoading(false)
+        return
+      }
+
+      try {
+        const { data, error: fetchErr } = await insforge
+          .from('employee_invitations')
+          .select('*')
+          .eq('token', token)
+          .maybeSingle()
+
+        if (fetchErr) throw fetchErr
+
+        if (!data) {
+          setInviteError("This invite link is invalid or has expired. Contact your administrator.")
+          return
+        }
+
+        const isExpired = new Date(data.expires_at) < new Date()
+        if (data.status !== 'pending' || isExpired) {
+          setInviteError("This invite link is invalid or has expired. Contact your administrator.")
+          return
+        }
+
+        setInvite(data)
+        setFormData(prev => ({
+          ...prev,
+          firstName: data.first_name || '',
+          lastName: data.last_name || '',
+          workEmail: data.email || ''
+        }))
+      } catch (err) {
+        console.error("Token validation error:", err)
+        setInviteError("An error occurred validating your invitation link.")
+      } finally {
+        setInviteLoading(false)
+      }
+    }
+
+    validateToken()
+  }, [token])
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -31,26 +85,14 @@ export function Register() {
     setLoading(true)
     setError(null)
     try {
-      // 1. Fetch pending invitation
-      const { data: invite, error: inviteErr } = await insforge
-        .from('employee_invitations')
-        .select('*')
-        .eq('email', formData.workEmail)
-        .maybeSingle()
-
-      if (inviteErr) throw inviteErr
-      if (!invite) {
-        throw new Error("No pending invitation found for this email address. Please make sure your manager has added you to the Employee Directory first.")
-      }
-
-      // 2. Sign up user
+      // 1. Sign up user auth credentials
       const { data: authData, error: authError } = await insforge.auth.signUp({
         email: formData.workEmail,
         password: formData.password
       })
       if (authError) throw authError
 
-      // 3. Insert profile with invitation details
+      // 2. Insert profile record using fields stored in invitation
       const { error: profileError } = await insforge
         .from('profiles')
         .insert({
@@ -70,11 +112,15 @@ export function Register() {
       
       if (profileError) throw profileError
 
-      // 4. Delete the invitation
-      await insforge
+      // 3. Soft-update invitation status to accepted
+      const { error: inviteUpdateError } = await insforge
         .from('employee_invitations')
-        .delete()
+        .update({ status: 'accepted' })
         .eq('id', invite.id)
+
+      if (inviteUpdateError) {
+        console.error("Failed to soft-update invitation status:", inviteUpdateError)
+      }
 
       navigate('/dashboard/overview')
     } catch (err) {
@@ -90,6 +136,29 @@ export function Register() {
   if (pwdLength >= 6) pwdStrength = 2
   if (pwdLength >= 8) pwdStrength = 3
   if (pwdLength >= 8 && /[A-Z]/.test(formData.password) && /[0-9]/.test(formData.password)) pwdStrength = 4
+
+  if (inviteLoading) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
+        <Spinner size="lg" />
+        <p style={{ marginTop: '16px', color: 'var(--gp-muted)', fontSize: '14px' }}>Validating invite link...</p>
+      </div>
+    )
+  }
+
+  if (inviteError) {
+    return (
+      <div style={{ textAlign: 'center', padding: '24px 0' }}>
+        <Logo size={140} showText={true} style={{ margin: '0 auto 32px' }} />
+        <div style={{ padding: '20px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', marginBottom: '24px', borderRadius: 0, fontSize: '14px', lineHeight: 1.5 }}>
+          {inviteError}
+        </div>
+        <Link to="/auth/login" style={{ color: "var(--gp-blue)", fontWeight: 600, textDecoration: 'none', fontSize: '14px' }}>
+          Back to Login
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -113,7 +182,7 @@ export function Register() {
             <Input label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} required />
           </div>
         </div>
-        <Input label="Invited Email Address" type="email" name="workEmail" value={formData.workEmail} onChange={handleChange} required />
+        <Input label="Invited Email Address" type="email" name="workEmail" value={formData.workEmail} readOnly required />
         
         <div>
           <Input label="Create Password" type="password" name="password" value={formData.password} onChange={handleChange} required minLength={8} />

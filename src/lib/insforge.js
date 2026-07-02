@@ -61,6 +61,7 @@ export const insforge = {
   storage: sdkClient.storage,
   functions: sdkClient.functions,
   realtime: sdkClient.realtime,
+  emails: sdkClient.emails,
   channel: (name, opts) => {
     if (typeof sdkClient.channel === 'function') return sdkClient.channel(name, opts)
     if (typeof sdkClient.realtime?.channel === 'function') return sdkClient.realtime.channel(name, opts)
