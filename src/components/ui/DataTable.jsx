@@ -37,7 +37,8 @@ export function DataTable({
   const filtered = data.filter((row) => {
     if (!search) return true
     return columns.some((col) => {
-      const val = col.accessor ? row[col.accessor] : ''
+      const accessor = col.accessor || col.accessorKey
+      const val = accessor ? row[accessor] : ''
       return String(val || '').toLowerCase().includes(search.toLowerCase())
     })
   })
@@ -65,7 +66,10 @@ export function DataTable({
   function handleExport() {
     const exportData = sorted.map((row) => {
       const obj = {}
-      columns.forEach((col) => { if (col.accessor) obj[col.header] = row[col.accessor] })
+      columns.forEach((col) => { 
+        const accessor = col.accessor || col.accessorKey
+        if (accessor) obj[col.header] = row[accessor] 
+      })
       return obj
     })
     downloadCSV(exportData, 'export.csv')
@@ -122,33 +126,37 @@ export function DataTable({
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              {columns.map((col) => (
-                <th
-                  key={col.header}
-                  onClick={() => col.sortable !== false && col.accessor && toggleSort(col.accessor)}
-                  style={{
-                    padding: '10px 16px',
-                    background: "var(--gp-background)", color: "var(--gp-black)",
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.06em',
-                    textAlign: 'left',
-                    whiteSpace: 'nowrap',
-                    cursor: col.sortable !== false && col.accessor ? 'pointer' : 'default',
-                    userSelect: 'none',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    {col.header}
-                    {col.sortable !== false && col.accessor && (
-                      sortKey === col.accessor
-                        ? sortDir === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
-                        : <ChevronsUpDown size={12} color="#4B5563" />
-                    )}
-                  </div>
-                </th>
-              ))}
+              {columns.map((col) => {
+                const accessor = col.accessor || col.accessorKey
+                const isSortable = col.sortable !== false && accessor
+                return (
+                  <th
+                    key={col.header}
+                    onClick={() => isSortable && toggleSort(accessor)}
+                    style={{
+                      padding: '10px 16px',
+                      background: "var(--gp-background)", color: "var(--gp-black)",
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      textAlign: 'left',
+                      whiteSpace: 'nowrap',
+                      cursor: isSortable ? 'pointer' : 'default',
+                      userSelect: 'none',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      {col.header}
+                      {isSortable && (
+                        sortKey === accessor
+                          ? sortDir === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
+                          : <ChevronsUpDown size={12} color="#4B5563" />
+                      )}
+                    </div>
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>
@@ -168,11 +176,26 @@ export function DataTable({
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gp-background)' }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = '' }}
                 >
-                  {columns.map((col) => (
-                    <td key={col.header} style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--gp-black)', whiteSpace: col.wrap ? 'normal' : 'nowrap' }}>
-                      {col.render ? col.render(row) : (col.accessor ? row[col.accessor] : null)}
-                    </td>
-                  ))}
+                  {columns.map((col) => {
+                    const accessor = col.accessor || col.accessorKey
+                    const renderCell = () => {
+                      if (col.cell) {
+                        return col.cell({
+                          getValue: () => row[accessor],
+                          row: { original: row }
+                        })
+                      }
+                      if (col.render) {
+                        return col.render(row)
+                      }
+                      return accessor ? row[accessor] : null
+                    }
+                    return (
+                      <td key={col.header} style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--gp-black)', whiteSpace: col.wrap ? 'normal' : 'nowrap' }}>
+                        {renderCell()}
+                      </td>
+                    )
+                  })}
                 </tr>
               ))
             )}
