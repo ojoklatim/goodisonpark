@@ -22,7 +22,7 @@ export function Directory() {
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('active')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [createdInvite, setCreatedInvite] = useState(null)
 
@@ -118,12 +118,20 @@ export function Directory() {
 
   const filteredEmployees = employees.filter(emp => {
     const s = search.toLowerCase()
-    const matchesSearch = emp.first_name.toLowerCase().includes(s) || 
-                          emp.last_name.toLowerCase().includes(s) || 
-                          (emp.employee_code || '').toLowerCase().includes(s)
+    const matchesSearch = 
+      (emp.first_name || '').toLowerCase().includes(s) || 
+      (emp.last_name || '').toLowerCase().includes(s) || 
+      (emp.employee_code || '').toLowerCase().includes(s)
     const matchesDept = deptFilter ? emp.department === deptFilter : true
     const matchesRole = roleFilter ? emp.role === roleFilter : true
-    const matchesStatus = statusFilter === 'active' ? emp.is_active : statusFilter === 'inactive' ? !emp.is_active : true
+    
+    const matchesStatus = (() => {
+      if (statusFilter === 'all') return true
+      if (statusFilter === 'pending') return emp.status === 'pending'
+      if (statusFilter === 'active') return emp.is_active && emp.status !== 'pending'
+      if (statusFilter === 'inactive') return !emp.is_active && emp.status !== 'pending'
+      return true
+    })()
     
     return matchesSearch && matchesDept && matchesRole && matchesStatus
   })
@@ -159,7 +167,21 @@ export function Directory() {
     { header: 'Department', accessorKey: 'department', cell: (info) => info.getValue() || '-' },
     { header: 'Job Title', accessorKey: 'job_title', cell: (info) => info.getValue() || '-' },
     { header: 'Role', accessorKey: 'role', cell: (info) => <Badge variant="gray">{info.getValue().replace('_', ' ')}</Badge> },
-    { header: 'Date Joined', accessorKey: 'date_joined', cell: (info) => info.getValue() ? format(new Date(info.getValue()), 'MMM dd, yyyy') : '-' },
+    { 
+      header: 'Date Joined', 
+      accessorKey: 'date_joined', 
+      cell: (info) => {
+        const val = info.getValue()
+        if (!val) return '-'
+        try {
+          const d = new Date(val)
+          if (isNaN(d.getTime())) return '-'
+          return format(d, 'MMM dd, yyyy')
+        } catch (e) {
+          return '-'
+        }
+      } 
+    },
     { 
       header: 'Status', 
       accessorKey: 'status', 
@@ -214,7 +236,7 @@ export function Directory() {
           <Select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} options={[{value: '', label: 'All Roles'}, {value: 'company_admin', label: 'Company Admin'}, {value: 'manager', label: 'Manager'}, {value: 'team_leader', label: 'Team Leader'}, {value: 'employee', label: 'Employee'}]} />
         </div>
         <div style={{ width: '160px' }}>
-          <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} options={[{value: 'all', label: 'All Statuses'}, {value: 'active', label: 'Active'}, {value: 'inactive', label: 'Inactive'}]} />
+          <Select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} options={[{value: 'all', label: 'All Statuses'}, {value: 'active', label: 'Active'}, {value: 'inactive', label: 'Inactive'}, {value: 'pending', label: 'Pending Sign Up'}]} />
         </div>
       </div>
 

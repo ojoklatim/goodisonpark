@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Logo } from '../../components/ui/Logo'
 import { Spinner } from '../../components/ui/Spinner'
+import { useAuthStore } from '../../store/authStore'
 
 export function Register() {
   const navigate = useNavigate()
@@ -112,7 +113,36 @@ export function Register() {
       
       if (profileError) throw profileError
 
-      // 3. Soft-update invitation status to accepted
+      // 3. Fetch company details
+      const { data: companyData, error: companyError } = await insforge
+        .from('companies')
+        .select('*')
+        .eq('id', invite.company_id)
+        .single()
+      if (companyError) throw companyError
+
+      // 4. Fetch role permissions
+      const { data: permissionsData, error: permissionsError } = await insforge
+        .from('role_permissions')
+        .select('*')
+        .eq('company_id', invite.company_id)
+        .eq('role', invite.role)
+      if (permissionsError) throw permissionsError
+
+      const permissionsMap = {}
+      if (permissionsData) {
+        permissionsData.forEach(perm => {
+          permissionsMap[perm.module] = {
+            can_view: perm.can_view,
+            can_create: perm.can_create,
+            can_edit: perm.can_edit,
+            can_delete: perm.can_delete,
+            can_export: perm.can_export
+          }
+        })
+      }
+
+      // 5. Soft-update invitation status to accepted
       const { error: inviteUpdateError } = await insforge
         .from('employee_invitations')
         .update({ status: 'accepted' })
@@ -121,6 +151,28 @@ export function Register() {
       if (inviteUpdateError) {
         console.error("Failed to soft-update invitation status:", inviteUpdateError)
       }
+
+      // 6. Set auth session in store
+      useAuthStore.getState().setAuth({
+        user: authData.user,
+        profile: {
+          id: authData.user.id,
+          company_id: invite.company_id,
+          branch_id: invite.branch_id,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: invite.phone,
+          role: invite.role,
+          department: invite.department,
+          job_title: invite.job_title,
+          employee_code: invite.employee_code,
+          date_joined: invite.date_joined,
+          is_active: true
+        },
+        company: companyData,
+        role: invite.role,
+        permissions: permissionsMap
+      })
 
       navigate('/dashboard/overview')
     } catch (err) {
