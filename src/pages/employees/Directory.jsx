@@ -116,6 +116,19 @@ export function Directory() {
 
   const addEmployee = useCreateInvitation()
 
+  const deleteInvitation = useMutation({
+    mutationFn: async (id) => {
+      const { error } = await insforge
+        .from('employee_invitations')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['employees', company?.id])
+    }
+  })
+
   const filteredEmployees = employees.filter(emp => {
     const s = search.toLowerCase()
     const matchesSearch = 
@@ -197,11 +210,26 @@ export function Directory() {
       id: 'actions',
       cell: ({ row }) => {
         const isPending = row.original.status === 'pending'
+        if (isPending) {
+          return (
+            <Button 
+              variant="danger" 
+              size="sm" 
+              onClick={() => {
+                if (confirm(`Are you sure you want to cancel the invitation for ${row.original.first_name}?`)) {
+                  deleteInvitation.mutate(row.original.id)
+                }
+              }}
+              disabled={deleteInvitation.isPending}
+            >
+              {deleteInvitation.isPending ? 'Canceling...' : 'Cancel Invite'}
+            </Button>
+          )
+        }
         return (
           <Button 
             variant="secondary" 
             size="sm" 
-            disabled={isPending} 
             onClick={() => navigate(`/dashboard/employees/${row.original.id}`)}
           >
             Profile
