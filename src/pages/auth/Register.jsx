@@ -9,6 +9,7 @@ import { Logo } from '../../components/ui/Logo'
 
 export function Register() {
   const navigate = useNavigate()
+  const [regType, setRegType] = useState('company') // 'company' or 'employee'
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -108,6 +109,68 @@ export function Register() {
     }
   }
 
+  const handleEmployeeSubmit = async (e) => {
+    e.preventDefault()
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      // 1. Fetch pending invitation
+      const { data: invite, error: inviteErr } = await insforge
+        .from('employee_invitations')
+        .select('*')
+        .eq('email', formData.workEmail)
+        .maybeSingle()
+
+      if (inviteErr) throw inviteErr
+      if (!invite) {
+        throw new Error("No pending invitation found for this email address. Please make sure your manager has added you to the Employee Directory first.")
+      }
+
+      // 2. Sign up user
+      const { data: authData, error: authError } = await insforge.auth.signUp({
+        email: formData.workEmail,
+        password: formData.password
+      })
+      if (authError) throw authError
+
+      // 3. Update profile with invitation details
+      const { error: profileError } = await insforge
+        .from('profiles')
+        .update({
+          company_id: invite.company_id,
+          branch_id: invite.branch_id,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: invite.phone || formData.phone,
+          role: invite.role,
+          department: invite.department,
+          job_title: invite.job_title,
+          employee_code: invite.employee_code,
+          date_joined: invite.date_joined,
+          is_active: true
+        })
+        .eq('id', authData.user.id)
+      
+      if (profileError) throw profileError
+
+      // 4. Delete the invitation
+      await insforge
+        .from('employee_invitations')
+        .delete()
+        .eq('id', invite.id)
+
+      navigate('/dashboard/overview')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const stepIndicatorColors = (s) => {
     if (step === s) return { bg: "var(--gp-blue)", border: "var(--gp-blue)", color: "var(--gp-black)" }
     if (step > s) return { bg: "var(--gp-background)", border: "var(--gp-background)", color: '#FFFFFF' }
@@ -124,31 +187,63 @@ export function Register() {
   return (
     <div>
       <Logo size={140} showText={true} style={{ margin: '0 auto 32px' }} />
-      <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '24px', color: "var(--gp-black)" }}>Register Company</h2>
-      
-      {/* Step Indicator */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '32px' }}>
-        {[1, 2, 3].map(s => {
-          const style = stepIndicatorColors(s)
-          return (
-            <div key={s} style={{ 
-              flex: 1, 
-              height: '8px', 
-              background: style.bg,
-              border: `1px solid ${style.border}`,
-              transition: 'all 0.3s',
-              borderRadius: 0
-            }} />
-          )
-        })}
+      <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '24px', color: "var(--gp-black)" }}>
+        {regType === 'company' ? 'Register Company' : 'Join as Employee'}
+      </h2>
+
+      {/* Registration Type Toggle */}
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--gp-border-light)', marginBottom: '24px' }}>
+        <button 
+          onClick={() => { setRegType('company'); setStep(1); setError(null); }}
+          style={{
+            flex: 1, padding: '12px', background: 'none', border: 'none', 
+            borderBottom: regType === 'company' ? '2px solid var(--gp-blue)' : '2px solid transparent',
+            color: regType === 'company' ? 'var(--gp-blue)' : 'var(--gp-muted)',
+            fontWeight: 600, cursor: 'pointer', fontSize: '14px'
+          }}
+        >
+          Register Company
+        </button>
+        <button 
+          onClick={() => { setRegType('employee'); setError(null); }}
+          style={{
+            flex: 1, padding: '12px', background: 'none', border: 'none', 
+            borderBottom: regType === 'employee' ? '2px solid var(--gp-blue)' : '2px solid transparent',
+            color: regType === 'employee' ? 'var(--gp-blue)' : 'var(--gp-muted)',
+            fontWeight: 600, cursor: 'pointer', fontSize: '14px'
+          }}
+        >
+          Join as Employee
+        </button>
       </div>
-      <p style={{ marginBottom: '24px', fontWeight: 600, color: "var(--gp-black)", fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        Step {step} of 3
-      </p>
+      
+      {/* Step Indicator (Only for Company sign up) */}
+      {regType === 'company' && (
+        <>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '32px' }}>
+            {[1, 2, 3].map(s => {
+              const style = stepIndicatorColors(s)
+              return (
+                <div key={s} style={{ 
+                  flex: 1, 
+                  height: '8px', 
+                  background: style.bg,
+                  border: `1px solid ${style.border}`,
+                  transition: 'all 0.3s',
+                  borderRadius: 0
+                }} />
+              )
+            })}
+          </div>
+          <p style={{ marginBottom: '24px', fontWeight: 600, color: "var(--gp-black)", fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Step {step} of 3
+          </p>
+        </>
+      )}
 
       {error && <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', marginBottom: '16px', borderRadius: 0, fontSize: '14px' }}>{error}</div>}
 
-      {step === 1 && (
+      {regType === 'company' && step === 1 && (
         <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <Input label="Company Name" name="companyName" value={formData.companyName} onChange={handleChange} required />
           <Select 
@@ -178,7 +273,7 @@ export function Register() {
         </form>
       )}
 
-      {step === 2 && (
+      {regType === 'company' && step === 2 && (
         <form onSubmit={(e) => { e.preventDefault(); handleNext(); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ flex: 1 }}><Input label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required /></div>
@@ -206,7 +301,7 @@ export function Register() {
         </form>
       )}
 
-      {step === 3 && (
+      {regType === 'company' && step === 3 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ background: '#F9FAFB', padding: '16px', border: "1px solid var(--gp-border-light)", fontSize: '14px', borderRadius: 0 }}>
             <p style={{ margin: '0 0 8px 0' }}><strong style={{ color: "var(--gp-black)" }}>Company:</strong> {formData.companyName} ({formData.industry})</p>
@@ -241,6 +336,37 @@ export function Register() {
             </Button>
           </div>
         </div>
+      )}
+
+      {regType === 'employee' && (
+        <form onSubmit={handleEmployeeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <Input label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required />
+            </div>
+            <div style={{ flex: 1 }}>
+              <Input label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} required />
+            </div>
+          </div>
+          <Input label="Invited Email Address" type="email" name="workEmail" value={formData.workEmail} onChange={handleChange} required />
+          
+          <div>
+            <Input label="Create Password" type="password" name="password" value={formData.password} onChange={handleChange} required minLength={8} />
+            <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
+              <div style={{ flex: 1, height: '4px', background: pwdStrength >= 1 ? '#EF4444' : "var(--gp-border-light)", transition: 'background 0.3s' }} />
+              <div style={{ flex: 1, height: '4px', background: pwdStrength >= 2 ? '#F59E0B' : "var(--gp-border-light)", transition: 'background 0.3s' }} />
+              <div style={{ flex: 1, height: '4px', background: pwdStrength >= 3 ? "var(--gp-blue)" : "var(--gp-border-light)", transition: 'background 0.3s' }} />
+              <div style={{ flex: 1, height: '4px', background: pwdStrength >= 4 ? '#22C55E' : "var(--gp-border-light)", transition: 'background 0.3s' }} />
+            </div>
+            <span style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px', display: 'block' }}>Min 8 chars, uppercase, number</span>
+          </div>
+
+          <Input label="Confirm Password" type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required />
+          
+          <Button type="submit" variant="primary" style={{ marginTop: '8px' }} disabled={loading}>
+            {loading ? 'Joining...' : 'Join Company'}
+          </Button>
+        </form>
       )}
 
       <p style={{ marginTop: '24px', fontSize: '14px', textAlign: 'center', color: 'var(--gp-muted)' }}>

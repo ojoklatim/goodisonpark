@@ -33,13 +33,44 @@ export function Directory() {
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ['employees', company?.id],
     queryFn: async () => {
-      const { data, error } = await insforge
+      // 1. Fetch active profiles
+      const { data: activeProfiles, error: activeErr } = await insforge
         .from('profiles')
         .select(`*, branches(name), auth_users:id(email)`)
         .eq('company_id', company?.id)
         .order('first_name', { ascending: true })
-      if (error) throw error
-      return data
+      if (activeErr) throw activeErr
+
+      // 2. Fetch pending invitations
+      const { data: invitations, error: inviteErr } = await insforge
+        .from('employee_invitations')
+        .select(`*, branches(name)`)
+        .eq('company_id', company?.id)
+      if (inviteErr) throw inviteErr
+
+      // 3. Map invitations to profile structure
+      const pendingEmployees = (invitations || []).map(inv => ({
+        id: inv.id,
+        first_name: inv.first_name,
+        last_name: inv.last_name,
+        phone: inv.phone,
+        employee_code: inv.employee_code,
+        department: inv.department,
+        job_title: inv.job_title,
+        branch_id: inv.branch_id,
+        branches: inv.branches,
+        role: inv.role,
+        date_joined: inv.date_joined,
+        is_active: false,
+        status: 'pending',
+        auth_users: { email: inv.email }
+      }))
+
+      // 4. Combine them
+      return [
+        ...pendingEmployees,
+        ...activeProfiles.map(p => ({ ...p, status: p.is_active ? 'active' : 'inactive' }))
+      ]
     },
     enabled: !!company?.id
   })
@@ -66,28 +97,20 @@ export function Directory() {
 
   const addEmployee = useMutation({
     mutationFn: async (newData) => {
-      // 1. Create auth user
-      const { data: authData, error: authErr } = await insforge.auth.signUp({
-        email: newData.email,
-        password: Math.random().toString(36).slice(-8) + 'A1!'
-      })
-      if (authErr) throw authErr
-
-      // 2. Insert/update profile
-      const { error: profileErr } = await insforge.from('profiles').update({
+      const { error } = await insforge.from('employee_invitations').insert([{
         company_id: company.id,
         first_name: newData.first_name,
         last_name: newData.last_name,
-        phone: newData.phone,
-        employee_code: newData.employee_code,
-        department: newData.department,
-        job_title: newData.job_title,
+        phone: newData.phone || null,
+        email: newData.email,
+        employee_code: newData.employee_code || null,
+        department: newData.department || null,
+        job_title: newData.job_title || null,
         branch_id: newData.branch_id || null,
         role: newData.role,
-        date_joined: newData.date_joined,
-        is_active: true
-      }).eq('id', authData.user.id)
-      if (profileErr) throw profileErr
+        date_joined: newData.date_joined || null
+      }])
+      if (error) throw error
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['employees', company?.id])
@@ -116,23 +139,59 @@ export function Directory() {
       header: 'Avatar',
       cell: ({ row }) => (
         <div style={{ width: '32px', height: '32px', background: "var(--gp-card)", color: "var(--gp-blue)", display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 600 }}>
-          {row.original.avatar_url ? <img src={row.original.avatar_url} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : `${row.original.first_name[0]}${row.original.last_name[0]}`}
+          {row.original.avatar_url ? <img src={row.original.avatar_url} alt="avatar" style={{width:'100%',height:'100%',objectFit:'cover'}}/> : `${(row.original.first_name || '')[0] || ''}${(row.original.last_name || '')[0] || ''}`}
         </div>
       )
     },
     { header: 'Emp Code', accessorKey: 'employee_code', cell: (info) => info.getValue() || '-' },
-    { header: 'Name', cell: ({ row }) => <span style={{ fontWeight: 600, color: "var(--gp-blue)", cursor: 'pointer' }} onClick={() => navigate(`/dashboard/employees/${row.original.id}`)}>{row.original.first_name} {row.original.last_name}</span> },
+    { 
+      header: 'Name', 
+      cell: ({ row }) => {
+        const isPending = row.original.status === 'pending'
+        return (
+          <span 
+            style={{ 
+              fontWeight: 600, 
+              color: isPending ? 'var(--gp-muted)' : "var(--gp-blue)", 
+              cursor: isPending ? 'default' : 'pointer' 
+            }} 
+            onClick={() => { if (!isPending) navigate(`/dashboard/employees/${row.original.id}`) }}
+          >
+            {row.original.first_name} {row.original.last_name}
+          </span>
+        )
+      } 
+    },
     { header: 'Department', accessorKey: 'department', cell: (info) => info.getValue() || '-' },
     { header: 'Job Title', accessorKey: 'job_title', cell: (info) => info.getValue() || '-' },
     { header: 'Role', accessorKey: 'role', cell: (info) => <Badge variant="gray">{info.getValue().replace('_', ' ')}</Badge> },
     { header: 'Date Joined', accessorKey: 'date_joined', cell: (info) => info.getValue() ? format(new Date(info.getValue()), 'MMM dd, yyyy') : '-' },
-    { header: 'Status', accessorKey: 'is_active', cell: (info) => <Badge variant={info.getValue() ? 'active' : 'inactive'}>{info.getValue() ? 'Active' : 'Inactive'}</Badge> },
+    { 
+      header: 'Status', 
+      accessorKey: 'status', 
+      cell: ({ row }) => {
+        if (row.original.status === 'pending') {
+          return <Badge status="pending" label="Pending Sign Up" />
+        }
+        return <Badge status={row.original.is_active ? 'active' : 'inactive'} />
+      } 
+    },
     {
       header: 'Actions',
       id: 'actions',
-      cell: ({ row }) => (
-        <Button variant="secondary" size="sm" onClick={() => navigate(`/dashboard/employees/${row.original.id}`)}>Profile</Button>
-      )
+      cell: ({ row }) => {
+        const isPending = row.original.status === 'pending'
+        return (
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            disabled={isPending} 
+            onClick={() => navigate(`/dashboard/employees/${row.original.id}`)}
+          >
+            Profile
+          </Button>
+        )
+      }
     }
   ]
 
