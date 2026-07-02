@@ -614,7 +614,10 @@ RETURNS TRIGGER AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$ LANGUAGE
 
 -- 5. Prevent inviting emails that already have registered accounts in auth.users:
 CREATE OR REPLACE FUNCTION check_invite_email_uniqueness()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
 BEGIN
   IF EXISTS (SELECT 1 FROM auth.users WHERE email = NEW.email) THEN
     RAISE EXCEPTION 'An account with the email % already exists in the system.', NEW.email;
