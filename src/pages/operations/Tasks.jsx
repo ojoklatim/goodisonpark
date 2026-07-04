@@ -8,6 +8,7 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Select } from '../../components/ui/Select'
 import { Modal } from '../../components/ui/Modal'
+import { RecordDetailModal } from '../../components/ui/RecordDetailModal'
 import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
 
@@ -16,6 +17,7 @@ export function Tasks() {
   const queryClient = useQueryClient()
   const [viewMode, setViewMode] = useState('table')
   const [showModal, setShowModal] = useState(false)
+  const [selectedTask, setSelectedTask] = useState(null)
 
   const [formData, setFormData] = useState({
     title: '', description: '', project_id: '', assigned_to: '', priority: 'medium', status: 'todo', due_date: '', estimated_hours: ''
@@ -108,7 +110,7 @@ export function Tasks() {
     { 
       header: 'Actions', 
       id: 'actions',
-      cell: () => <button style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
+      cell: ({ row }) => <button onClick={e => { e.stopPropagation(); setSelectedTask(row.original) }} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
     }
   ]
 
@@ -131,10 +133,25 @@ export function Tasks() {
       </div>
 
       {viewMode === 'table' ? (
-        <DataTable columns={columns} data={tasks} isLoading={loadingTasks} />
+        <DataTable columns={columns} data={tasks} isLoading={loadingTasks} onRowClick={setSelectedTask} />
       ) : (
         <div style={{ color: '#6B7280' }}>Kanban board view across all tasks...</div>
       )}
+
+      <RecordDetailModal
+        isOpen={!!selectedTask}
+        onClose={() => setSelectedTask(null)}
+        title={selectedTask?.title || 'Task'}
+        fields={selectedTask ? [
+          { label: 'Project', value: selectedTask.projects?.name },
+          { label: 'Assignee', value: selectedTask.assignee ? `${selectedTask.assignee.first_name} ${selectedTask.assignee.last_name}` : 'Unassigned' },
+          { label: 'Priority', value: formatStatus(selectedTask.priority) },
+          { label: 'Status', value: formatStatus(selectedTask.status) },
+          { label: 'Due Date', value: selectedTask.due_date ? new Date(selectedTask.due_date).toLocaleDateString() : null },
+          { label: 'Estimated Hours', value: selectedTask.estimated_hours },
+          { label: 'Description', value: selectedTask.description },
+        ] : []}
+      />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="New Task">
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto', padding: '4px' }}>

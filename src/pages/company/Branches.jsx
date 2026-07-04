@@ -102,7 +102,7 @@ export function Branches() {
       header: 'Actions',
       id: 'actions',
       cell: ({ row }) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           <Button variant="secondary" size="sm" onClick={() => openEditModal(row.original)}>Edit</Button>
           <Button variant="danger" size="sm" onClick={() => { setBranchToDelete(row.original.id); setIsConfirmOpen(true) }}>Delete</Button>
         </div>
@@ -118,7 +118,7 @@ export function Branches() {
       />
       
       <div style={{ marginTop: '24px' }}>
-        <DataTable data={branches} columns={columns} isLoading={isLoading} />
+        <DataTable data={branches} columns={columns} isLoading={isLoading} onRowClick={openEditModal} />
       </div>
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingBranch ? 'Edit Branch' : 'Add Branch'}>

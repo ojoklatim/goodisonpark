@@ -155,7 +155,7 @@ export function Leads() {
       header: 'Actions',
       id: 'actions',
       cell: ({ row }) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           <Button variant="secondary" size="sm" onClick={() => openEdit(row.original)}>Edit</Button>
           <Button variant="danger" size="sm" onClick={() => { if(window.confirm('Delete lead?')) deleteLead.mutate(row.original.id) }}>Del</Button>
         </div>
@@ -194,7 +194,7 @@ export function Leads() {
         </div>
       </div>
 
-      <DataTable data={filteredLeads} columns={columns} isLoading={isLoading} />
+      <DataTable data={filteredLeads} columns={columns} isLoading={isLoading} onRowClick={openEdit} />
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingLead ? 'Edit Lead' : 'New Lead'}>
         <form onSubmit={(e) => { e.preventDefault(); saveLead.mutate(formData); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '600px' }}>

@@ -9,6 +9,7 @@ import { Users, Briefcase, FileText, DollarSign, Clock, CheckCircle } from 'luci
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { format } from 'date-fns'
 import { formatCurrency } from '../../lib/utils'
+import { CheckInWidget } from '../../components/hr/CheckInWidget'
 
 const COLORS = {
   blue: "var(--gp-blue)",
@@ -160,6 +161,8 @@ export function Overview() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <PageHeader title="Overview" subtitle={`Welcome to ${company?.name || 'Goodison Park'} operations.`} />
+
+      <CheckInWidget />
       
       {/* STATS ROW */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>

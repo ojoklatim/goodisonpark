@@ -210,30 +210,31 @@ export function Directory() {
       id: 'actions',
       cell: ({ row }) => {
         const isPending = row.original.status === 'pending'
-        if (isPending) {
-          return (
-            <Button 
-              variant="danger" 
-              size="sm" 
-              onClick={() => {
-                if (confirm(`Are you sure you want to cancel the invitation for ${row.original.first_name}?`)) {
-                  deleteInvitation.mutate(row.original.id)
-                }
-              }}
-              disabled={deleteInvitation.isPending}
-            >
-              {deleteInvitation.isPending ? 'Canceling...' : 'Cancel Invite'}
-            </Button>
-          )
-        }
         return (
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            onClick={() => navigate(`/dashboard/employees/${row.original.id}`)}
-          >
-            Profile
-          </Button>
+          <div onClick={e => e.stopPropagation()}>
+            {isPending ? (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => {
+                  if (confirm(`Are you sure you want to cancel the invitation for ${row.original.first_name}?`)) {
+                    deleteInvitation.mutate(row.original.id)
+                  }
+                }}
+                disabled={deleteInvitation.isPending}
+              >
+                {deleteInvitation.isPending ? 'Canceling...' : 'Cancel Invite'}
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate(`/dashboard/employees/${row.original.id}`)}
+              >
+                Profile
+              </Button>
+            )}
+          </div>
         )
       }
     }
@@ -268,7 +269,12 @@ export function Directory() {
         </div>
       </div>
 
-      <DataTable data={filteredEmployees} columns={columns} isLoading={isLoading} />
+      <DataTable
+        data={filteredEmployees}
+        columns={columns}
+        isLoading={isLoading}
+        onRowClick={(row) => { if (row.status !== 'pending') navigate(`/dashboard/employees/${row.id}`) }}
+      />
 
       <Modal isOpen={isAddOpen} onClose={() => { setIsAddOpen(false); setCreatedInvite(null); addEmployee.reset(); }} title="Add Employee" width={600}>
         {createdInvite ? (

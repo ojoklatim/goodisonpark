@@ -102,7 +102,7 @@ export function SOPs() {
       header: 'Actions', 
       id: 'actions',
       cell: (info) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           <button onClick={() => setViewSOPModal({ show: true, sop: info.row.original })} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
         </div>
       )
@@ -118,7 +118,7 @@ export function SOPs() {
       />
 
       <div style={{ marginTop: '24px' }}>
-        <DataTable columns={columns} data={sops} isLoading={isLoading} />
+        <DataTable columns={columns} data={sops} isLoading={isLoading} onRowClick={(sop) => setViewSOPModal({ show: true, sop })} />
       </div>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="New SOP">

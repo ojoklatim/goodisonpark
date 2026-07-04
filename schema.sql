@@ -303,8 +303,29 @@ CREATE TABLE attendance (
   check_in_at TIMESTAMPTZ,
   check_out_at TIMESTAMPTZ,
   status TEXT DEFAULT 'present' CHECK (status IN ('present','absent','half_day','late','on_leave')),
+  marked_by UUID REFERENCES profiles(id),
+  source TEXT DEFAULT 'admin' CHECK (source IN ('self','admin')),
   notes TEXT
 );
+CREATE UNIQUE INDEX attendance_profile_date_unique ON attendance (profile_id, date);
+
+-- daily_activity_logs
+CREATE TABLE daily_activity_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+  profile_id UUID REFERENCES profiles(id),
+  date DATE NOT NULL,
+  activities JSONB DEFAULT '[]', -- [{id, text, completed}]
+  plan_for_tomorrow TEXT,
+  status TEXT DEFAULT 'submitted' CHECK (status IN ('submitted','reviewed')),
+  reviewed_by UUID REFERENCES profiles(id),
+  reviewed_at TIMESTAMPTZ,
+  admin_feedback TEXT,
+  submitted_at TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE UNIQUE INDEX daily_activity_logs_profile_date_unique ON daily_activity_logs (profile_id, date);
 
 -- goals
 CREATE TABLE goals (

@@ -8,11 +8,13 @@ import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { Input } from '../../components/ui/Input'
+import { RecordDetailModal } from '../../components/ui/RecordDetailModal'
 
 export function Approvals() {
   const { company, user } = useAuth()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState('pending') // pending | myRequests
+  const [selectedApproval, setSelectedApproval] = useState(null)
 
   const [rejectModal, setRejectModal] = useState({ show: false, approvalId: null, notes: '' })
 
@@ -89,14 +91,14 @@ export function Approvals() {
       cell: (info) => {
         const row = info.row.original
         return (
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
             {tab === 'pending' && row.status === 'pending' ? (
               <>
                 <button onClick={() => handleApprove(row.id)} style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer', fontWeight: 600 }}>Approve</button>
                 <button onClick={() => setRejectModal({ show: true, approvalId: row.id, notes: '' })} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }}>Reject</button>
               </>
             ) : (
-              <button style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
+              <button onClick={() => setSelectedApproval(row)} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
             )}
           </div>
         )
@@ -126,7 +128,21 @@ export function Approvals() {
         </button>
       </div>
 
-      <DataTable columns={columns} data={filteredApprovals} isLoading={isLoading} />
+      <DataTable columns={columns} data={filteredApprovals} isLoading={isLoading} onRowClick={setSelectedApproval} />
+
+      <RecordDetailModal
+        isOpen={!!selectedApproval}
+        onClose={() => setSelectedApproval(null)}
+        title={formatType(selectedApproval?.type) || 'Approval Request'}
+        fields={selectedApproval ? [
+          { label: 'Type', value: formatType(selectedApproval.type) },
+          { label: 'Reference', value: selectedApproval.reference_table },
+          { label: 'Requested By', value: selectedApproval.requester ? `${selectedApproval.requester.first_name} ${selectedApproval.requester.last_name}` : null },
+          { label: 'Date', value: new Date(selectedApproval.created_at).toLocaleDateString() },
+          { label: 'Status', value: formatType(selectedApproval.status) },
+          { label: 'Notes', value: selectedApproval.notes },
+        ] : []}
+      />
 
       <Modal isOpen={rejectModal.show} onClose={() => setRejectModal({ show: false, approvalId: null, notes: '' })} title="Reject Request">
         <form onSubmit={handleReject} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

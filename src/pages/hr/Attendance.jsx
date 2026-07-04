@@ -18,14 +18,15 @@ function fmt(s) {
 }
 
 export function Attendance() {
-  const { company, user } = useAuth()
+  const { company, user, profile, role } = useAuth()
+  const isManager = role === 'company_admin' || role === 'manager'
   const queryClient = useQueryClient()
   const [showBulkModal, setShowBulkModal] = useState(false)
   const [bulkDate, setBulkDate] = useState(new Date().toISOString().split('T')[0])
   const [bulkStatuses, setBulkStatuses] = useState({})
   const [monthFilter, setMonthFilter] = useState(new Date().toISOString().slice(0, 7))
 
-  const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
+  const { data: allProfiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ['profiles', company?.id],
     queryFn: async () => {
       const { data, error } = await insforge
@@ -39,18 +40,23 @@ export function Attendance() {
     enabled: !!company?.id
   })
 
+  // Employees only ever see their own attendance record, not the whole company's
+  const profiles = isManager ? allProfiles : allProfiles.filter(p => p.id === profile?.id)
+
   const { data: attendance = [], isLoading: loadingAtt } = useQuery({
-    queryKey: ['attendance', company?.id, monthFilter],
+    queryKey: ['attendance', company?.id, monthFilter, isManager ? 'all' : profile?.id],
     queryFn: async () => {
       const [yr, mo] = monthFilter.split('-').map(Number)
       const startDate = `${monthFilter}-01`
       const endDate = new Date(yr, mo, 0).toISOString().split('T')[0]
-      const { data, error } = await insforge
+      let query = insforge
         .from('attendance')
         .select('*')
         .eq('company_id', company?.id)
         .gte('date', startDate)
         .lte('date', endDate)
+      if (!isManager) query = query.eq('profile_id', profile?.id)
+      const { data, error } = await query
       if (error) throw error
       return data
     },
@@ -122,8 +128,8 @@ export function Attendance() {
     <div>
       <PageHeader
         title="Attendance"
-        subtitle="Track employee attendance and punctuality"
-        action={<Button variant="primary" onClick={() => setShowBulkModal(true)}>Mark Attendance</Button>}
+        subtitle={isManager ? "Track employee attendance and punctuality" : "Your attendance record"}
+        action={isManager ? <Button variant="primary" onClick={() => setShowBulkModal(true)}>Mark Attendance</Button> : null}
       />
 
       <div style={{ display: 'flex', gap: '16px', marginTop: '24px', marginBottom: '24px', alignItems: 'center' }}>

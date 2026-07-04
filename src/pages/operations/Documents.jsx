@@ -8,11 +8,13 @@ import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
+import { RecordDetailModal } from '../../components/ui/RecordDetailModal'
 
 export function Documents() {
   const { company, user } = useAuth()
   const queryClient = useQueryClient()
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [selectedDoc, setSelectedDoc] = useState(null)
   const [activeCategory, setActiveCategory] = useState('All')
   const [search, setSearch] = useState('')
 
@@ -104,7 +106,7 @@ export function Documents() {
       header: 'Actions', 
       id: 'actions',
       cell: (info) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           <button onClick={() => window.open(info.row.original.file_url, '_blank')} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>Download</button>
           <button onClick={() => handleDelete(info.row.original.id)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer' }}>Delete</button>
         </div>
@@ -143,7 +145,22 @@ export function Documents() {
           <div style={{ marginBottom: '16px' }}>
             <Input placeholder="Search documents..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-          <DataTable columns={columns} data={filteredDocs} isLoading={isLoading} />
+          <DataTable columns={columns} data={filteredDocs} isLoading={isLoading} onRowClick={setSelectedDoc} />
+
+          <RecordDetailModal
+            isOpen={!!selectedDoc}
+            onClose={() => setSelectedDoc(null)}
+            title={selectedDoc?.title || 'Document'}
+            fields={selectedDoc ? [
+              { label: 'Category', value: formatCategory(selectedDoc.category) },
+              { label: 'Uploaded By', value: selectedDoc.uploader ? `${selectedDoc.uploader.first_name} ${selectedDoc.uploader.last_name}` : null },
+              { label: 'Date', value: new Date(selectedDoc.created_at).toLocaleDateString() },
+              { label: 'Size', value: formatSize(selectedDoc.file_size) },
+              { label: 'Visibility', value: selectedDoc.is_public_to_company ? 'Public to Company' : 'Restricted' },
+              { label: 'Description', value: selectedDoc.description },
+            ] : []}
+            footer={selectedDoc && <Button variant="primary" onClick={() => window.open(selectedDoc.file_url, '_blank')}>Download</Button>}
+          />
         </div>
       </div>
 

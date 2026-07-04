@@ -46,6 +46,7 @@ const Calendar = lazy(() => import('../pages/operations/Calendar').then(m => ({ 
 
 const Leave = lazy(() => import('../pages/hr/Leave').then(m => ({ default: m.Leave })))
 const Attendance = lazy(() => import('../pages/hr/Attendance').then(m => ({ default: m.Attendance })))
+const DailyActivity = lazy(() => import('../pages/hr/DailyActivity').then(m => ({ default: m.DailyActivity })))
 const Payroll = lazy(() => import('../pages/hr/Payroll').then(m => ({ default: m.Payroll })))
 const Announcements = lazy(() => import('../pages/hr/Announcements').then(m => ({ default: m.Announcements })))
 const Training = lazy(() => import('../pages/hr/Training').then(m => ({ default: m.Training })))
@@ -142,6 +143,7 @@ export const router = createBrowserRouter([
       // HR
       { path: 'hr/leave', element: <SuspenseWrapper><Leave /></SuspenseWrapper> },
       { path: 'hr/attendance', element: <SuspenseWrapper><Attendance /></SuspenseWrapper> },
+      { path: 'hr/activity', element: <SuspenseWrapper><DailyActivity /></SuspenseWrapper> },
       { path: 'hr/payroll', element: <SuspenseWrapper><Payroll /></SuspenseWrapper> },
       { path: 'hr/announcements', element: <SuspenseWrapper><Announcements /></SuspenseWrapper> },
       { path: 'hr/training', element: <SuspenseWrapper><Training /></SuspenseWrapper> },

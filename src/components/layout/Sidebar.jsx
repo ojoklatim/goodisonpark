@@ -47,6 +47,7 @@ const NAV = [
     items: [
       { label: 'Employees', icon: Users2, to: '/dashboard/employees' },
       { label: 'Attendance', icon: CalendarCheck, to: '/dashboard/hr/attendance' },
+      { label: 'Daily Activity', icon: Activity, to: '/dashboard/hr/activity' },
       { label: 'Performance', icon: BarChart3, to: '/dashboard/performance' },
       { label: 'Leave', icon: Umbrella, to: '/dashboard/hr/leave' },
       { label: 'Payroll', icon: Wallet, to: '/dashboard/hr/payroll' },
@@ -109,7 +110,7 @@ export function Sidebar() {
       
       // Limit navigation items for employees
       if (group.section === 'Finance' && item.label !== 'Expenses') return false
-      if (group.section === 'People' && !['Leave', 'Training'].includes(item.label)) return false
+      if (group.section === 'People' && !['Leave', 'Training', 'Attendance', 'Daily Activity'].includes(item.label)) return false
       if (group.section === 'Operations' && item.label === 'Approvals') return false
       if (group.section === 'Analytics') return false
       if (group.section === 'Communications' && ['Social Media', 'Social Settings'].includes(item.label)) return false

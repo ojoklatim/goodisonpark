@@ -143,7 +143,7 @@ export function Users() {
       header: 'Actions',
       id: 'actions',
       cell: ({ row }) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           <Button variant="secondary" size="sm" onClick={() => openEdit(row.original)}>Edit</Button>
           {row.original.is_active && (
             <Button variant="danger" size="sm" onClick={() => { setUserToDeactivate(row.original.id); setIsConfirmOpen(true) }}>Deactivate</Button>
@@ -164,7 +164,7 @@ export function Users() {
       />
       
       <div style={{ marginTop: '24px' }}>
-        <DataTable data={users} columns={columns} isLoading={isLoading} />
+        <DataTable data={users} columns={columns} isLoading={isLoading} onRowClick={openEdit} />
       </div>
 
       <Modal isOpen={isInviteOpen} onClose={() => { setIsInviteOpen(false); setCreatedInvite(null); inviteUser.reset(); }} title="Invite User">
