@@ -10,9 +10,11 @@ import { Modal } from '../../components/ui/Modal'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { format, isPast } from 'date-fns'
+import { useNavigate } from 'react-router-dom'
 
 export function Invoices() {
   const { company, user } = useAuth()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [selectedInvoice, setSelectedInvoice] = useState(null)
   const [isPaymentOpen, setIsPaymentOpen] = useState(false)
@@ -86,7 +88,8 @@ export function Invoices() {
       header: 'Actions',
       id: 'actions',
       cell: ({ row }) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
+          <Button variant="secondary" size="sm" onClick={() => navigate(`/dashboard/sales/invoices/${row.original.id}`)}>Edit</Button>
           {['unpaid', 'partial', 'overdue'].includes(row.original.status) && (
             <Button variant="primary" size="sm" onClick={() => {
               setSelectedInvoice(row.original)
@@ -101,7 +104,7 @@ export function Invoices() {
 
   return (
     <div>
-      <PageHeader title="Invoices" />
+      <PageHeader title="Invoices" action={<Button variant="primary" onClick={() => navigate('/dashboard/sales/invoices/new')}>New Invoice</Button>} />
       <div style={{ marginTop: '24px' }}>
         <DataTable data={invoices} columns={columns} isLoading={isLoading} />
       </div>

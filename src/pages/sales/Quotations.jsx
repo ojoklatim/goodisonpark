@@ -66,8 +66,13 @@ export function Quotations() {
       header: 'Actions',
       id: 'actions',
       cell: ({ row }) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           <Button variant="secondary" size="sm" onClick={() => navigate(`/dashboard/sales/quotations/${row.original.id}`)}>Edit</Button>
+          {row.original.status === 'accepted' && (
+            <Button variant="primary" size="sm" onClick={() => navigate(`/dashboard/sales/invoices/new?from_quotation=${row.original.id}`)}>
+              To Invoice
+            </Button>
+          )}
           <Button variant="danger" size="sm" onClick={() => { if(window.confirm('Delete quotation?')) deleteQuotation.mutate(row.original.id) }}>Del</Button>
         </div>
       )

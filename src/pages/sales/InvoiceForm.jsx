@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { insforge } from '../../lib/insforge'
@@ -9,14 +9,14 @@ import { Select } from '../../components/ui/Select'
 import { ArrowLeft, Plus, Trash2, Download } from 'lucide-react'
 import { format } from 'date-fns'
 
-const DEFAULT_TERMS = `This quotation is valid for 30 days from the date of issue.
-Payment terms: 50% advance payment and 50% upon completion.
-Prices are quoted in Uganda Shillings (UGX).
-Any additional work outside the scope quoted will be charged separately.
-Payment may be made by bank transfer, mobile money, or cheque.`
+const DEFAULT_TERMS = `Payment is due within 14 days from the invoice date.
+Late payments may attract additional charges.
+Please include the invoice number when making payment.`
 
-export function QuotationForm() {
+export function InvoiceForm() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
+  const fromQuotationId = searchParams.get('from_quotation')
   const isNew = !id || id === 'new'
   const { company, profile } = useAuth()
   const navigate = useNavigate()
@@ -25,63 +25,81 @@ export function QuotationForm() {
   const [isExporting, setIsExporting] = useState(false)
 
   const [formData, setFormData] = useState({
-    quotation_number: '',
+    invoice_number: '',
     client_id: '',
-    deal_id: '',
+    quotation_id: '',
     status: 'draft',
-    subject: 'Quotation for Services',
-    valid_until: '',
-    terms: DEFAULT_TERMS,
-    notes: '',
+    due_date: '',
+    payment_terms: DEFAULT_TERMS,
+    notes: 'Thank you for your business. We appreciate the opportunity to serve you and look forward to working with you again.',
     tax_rate: 18,
     items: []
   })
 
-  // Fetch Quotation if editing
-  const { data: quotation, isLoading: qLoading } = useQuery({
-    queryKey: ['quotation', id],
+  const { data: invoice, isLoading: invLoading } = useQuery({
+    queryKey: ['invoice', id],
     queryFn: async () => {
       if (isNew) return null
-      const { data, error } = await insforge.from('quotations').select('*').eq('id', id).single()
+      const { data, error } = await insforge.from('invoices').select('*').eq('id', id).single()
       if (error) throw error
       return data
     },
     enabled: !isNew
   })
 
-  // Count existing quotations to build the next sequential number for new ones
-  const { data: quotationCount } = useQuery({
-    queryKey: ['quotations_count', company?.id],
+  const { data: invoiceCount } = useQuery({
+    queryKey: ['invoices_count', company?.id],
     queryFn: async () => {
-      const { count, error } = await insforge.from('quotations').select('*', { count: 'exact', head: true }).eq('company_id', company?.id)
+      const { count, error } = await insforge.from('invoices').select('*', { count: 'exact', head: true }).eq('company_id', company?.id)
       if (error) throw error
       return count || 0
     },
     enabled: !!company?.id && isNew
   })
 
-  useEffect(() => {
-    if (quotation) {
-      setFormData({
-        quotation_number: quotation.quotation_number || '',
-        client_id: quotation.client_id || '',
-        deal_id: quotation.deal_id || '',
-        status: quotation.status || 'draft',
-        subject: quotation.subject || 'Quotation for Services',
-        valid_until: quotation.valid_until || '',
-        terms: quotation.terms || DEFAULT_TERMS,
-        notes: quotation.notes || '',
-        tax_rate: quotation.tax_rate ?? 18,
-        items: quotation.items || []
-      })
-    } else if (isNew && quotationCount !== undefined) {
-      const year = new Date().getFullYear()
-      const seq = String(quotationCount + 1).padStart(3, '0')
-      setFormData(prev => ({ ...prev, quotation_number: `QTN-${year}-${seq}` }))
-    }
-  }, [quotation, isNew, quotationCount])
+  // If created from an accepted quotation, pre-fill from it
+  const { data: sourceQuotation } = useQuery({
+    queryKey: ['quotation', fromQuotationId],
+    queryFn: async () => {
+      const { data, error } = await insforge.from('quotations').select('*').eq('id', fromQuotationId).single()
+      if (error) throw error
+      return data
+    },
+    enabled: !!fromQuotationId && isNew
+  })
 
-  // Fetch dependencies
+  useEffect(() => {
+    if (invoice) {
+      setFormData({
+        invoice_number: invoice.invoice_number || '',
+        client_id: invoice.client_id || '',
+        quotation_id: invoice.quotation_id || '',
+        status: invoice.status || 'draft',
+        due_date: invoice.due_date || '',
+        payment_terms: invoice.payment_terms || DEFAULT_TERMS,
+        notes: invoice.notes || '',
+        tax_rate: invoice.tax_rate ?? 18,
+        items: invoice.items || []
+      })
+    } else if (isNew && invoiceCount !== undefined) {
+      const year = new Date().getFullYear()
+      const seq = String(invoiceCount + 1).padStart(3, '0')
+      setFormData(prev => ({ ...prev, invoice_number: `INV-${year}-${seq}` }))
+    }
+  }, [invoice, isNew, invoiceCount])
+
+  useEffect(() => {
+    if (sourceQuotation && isNew) {
+      setFormData(prev => ({
+        ...prev,
+        client_id: sourceQuotation.client_id || '',
+        quotation_id: sourceQuotation.id,
+        items: sourceQuotation.items || [],
+        tax_rate: sourceQuotation.tax_rate ?? 18
+      }))
+    }
+  }, [sourceQuotation, isNew])
+
   const { data: clients = [] } = useQuery({
     queryKey: ['clients', company?.id],
     queryFn: async () => {
@@ -92,23 +110,10 @@ export function QuotationForm() {
     enabled: !!company?.id
   })
 
-  const { data: deals = [] } = useQuery({
-    queryKey: ['deals', company?.id],
-    queryFn: async () => {
-      const { data, error } = await insforge.from('deals').select('id, title').eq('company_id', company?.id)
-      if (error) throw error
-      return data
-    },
-    enabled: !!company?.id
-  })
-
   const selectedClient = clients.find(c => c.id === formData.client_id)
 
   const handleAddItem = () => {
-    setFormData(prev => ({
-      ...prev,
-      items: [...prev.items, { description: '', qty: 1, unit_price: 0, total: 0 }]
-    }))
+    setFormData(prev => ({ ...prev, items: [...prev.items, { description: '', qty: 1, unit_price: 0, total: 0 }] }))
   }
 
   const handleItemChange = (index, field, value) => {
@@ -121,25 +126,23 @@ export function QuotationForm() {
   }
 
   const handleRemoveItem = (index) => {
-    const newItems = formData.items.filter((_, i) => i !== index)
-    setFormData(prev => ({ ...prev, items: newItems }))
+    setFormData(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }))
   }
 
   const subtotal = formData.items.reduce((sum, item) => sum + Number(item.total || 0), 0)
   const taxAmount = (subtotal * Number(formData.tax_rate || 0)) / 100
   const grandTotal = subtotal + taxAmount
 
-  const saveQuotation = useMutation({
+  const saveInvoice = useMutation({
     mutationFn: async (statusOverride) => {
       const payload = {
         company_id: company.id,
-        quotation_number: formData.quotation_number,
+        invoice_number: formData.invoice_number,
         client_id: formData.client_id || null,
-        deal_id: formData.deal_id || null,
+        quotation_id: formData.quotation_id || null,
         status: statusOverride || formData.status,
-        subject: formData.subject,
-        valid_until: formData.valid_until || null,
-        terms: formData.terms,
+        due_date: formData.due_date || null,
+        payment_terms: formData.payment_terms,
         notes: formData.notes,
         tax_rate: formData.tax_rate,
         items: formData.items,
@@ -149,18 +152,17 @@ export function QuotationForm() {
         currency: 'UGX',
         created_by: profile?.id
       }
-
       if (isNew) {
-        const { error } = await insforge.from('quotations').insert([payload])
+        const { error } = await insforge.from('invoices').insert([payload])
         if (error) throw error
       } else {
-        const { error } = await insforge.from('quotations').update(payload).eq('id', id)
+        const { error } = await insforge.from('invoices').update(payload).eq('id', id)
         if (error) throw error
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['quotations', company?.id])
-      navigate('/dashboard/sales/quotations')
+      queryClient.invalidateQueries(['invoices', company?.id])
+      navigate('/dashboard/sales/invoices')
     }
   })
 
@@ -168,10 +170,7 @@ export function QuotationForm() {
     if (!printRef.current) return
     setIsExporting(true)
     try {
-      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
-        import('html2canvas'),
-        import('jspdf')
-      ])
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')])
       const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#FFFFFF' })
       const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF('p', 'mm', 'a4')
@@ -179,7 +178,6 @@ export function QuotationForm() {
       const pageHeight = pdf.internal.pageSize.getHeight()
       const imgWidth = pageWidth
       const imgHeight = (canvas.height * imgWidth) / canvas.width
-
       let heightLeft = imgHeight
       let position = 0
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
@@ -190,37 +188,34 @@ export function QuotationForm() {
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
         heightLeft -= pageHeight
       }
-      pdf.save(`Quotation-${formData.quotation_number || 'draft'}.pdf`)
+      pdf.save(`Invoice-${formData.invoice_number || 'draft'}.pdf`)
     } finally {
       setIsExporting(false)
     }
   }
 
-  if (qLoading) return <div>Loading...</div>
+  if (invLoading) return <div>Loading...</div>
 
   const today = format(new Date(), 'dd MMMM yyyy')
 
   return (
     <div style={{ paddingBottom: '64px' }}>
-
-      {/* Editing Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
-        <button onClick={() => navigate('/dashboard/sales/quotations')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--gp-black)' }}>
+        <button onClick={() => navigate('/dashboard/sales/invoices')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--gp-black)' }}>
           <ArrowLeft size={20} />
         </button>
         <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: "var(--gp-black)" }}>
-          {isNew ? 'New Quotation' : `Edit Quotation ${formData.quotation_number}`}
+          {isNew ? 'New Invoice' : `Edit Invoice ${formData.invoice_number}`}
         </h1>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           <Button variant="secondary" onClick={handleExportPDF} disabled={isExporting}>
             <Download size={16} style={{ marginRight: '8px' }} /> {isExporting ? 'Exporting…' : 'Export PDF'}
           </Button>
-          <Button variant="secondary" onClick={() => saveQuotation.mutate('draft')}>Save Draft</Button>
-          <Button variant="primary" onClick={() => saveQuotation.mutate('sent')}>Save & Send</Button>
+          <Button variant="secondary" onClick={() => saveInvoice.mutate('draft')}>Save Draft</Button>
+          <Button variant="primary" onClick={() => saveInvoice.mutate('unpaid')}>Save & Issue</Button>
         </div>
       </div>
 
-      {/* Editable fields not part of the printable document */}
       <div style={{
         background: "var(--gp-card)", border: "1px solid var(--gp-border-light)", padding: '20px',
         maxWidth: '900px', margin: '0 auto 24px auto', display: 'flex', flexWrap: 'wrap', gap: '16px'
@@ -229,30 +224,24 @@ export function QuotationForm() {
           <Select label="Client" value={formData.client_id} onChange={e => setFormData({ ...formData, client_id: e.target.value })}
             options={[{ value: '', label: 'Select Client' }, ...clients.map(c => ({ value: c.id, label: c.company_name || c.name }))]} />
         </div>
-        <div style={{ flex: '1 1 220px' }}>
-          <Select label="Linked Deal (Optional)" value={formData.deal_id} onChange={e => setFormData({ ...formData, deal_id: e.target.value })}
-            options={[{ value: '', label: 'None' }, ...deals.map(d => ({ value: d.id, label: d.title }))]} />
-        </div>
         <div style={{ flex: '1 1 160px' }}>
-          <Input label="Valid Until" type="date" value={formData.valid_until} onChange={e => setFormData({ ...formData, valid_until: e.target.value })} />
+          <Input label="Due Date" type="date" value={formData.due_date} onChange={e => setFormData({ ...formData, due_date: e.target.value })} />
         </div>
         <div style={{ flex: '1 1 160px' }}>
           <Select label="Status" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}
-            options={['draft', 'sent', 'accepted', 'rejected', 'expired'].map(s => ({ value: s, label: s }))} />
+            options={['draft', 'unpaid', 'partial', 'paid', 'overdue', 'cancelled'].map(s => ({ value: s, label: s }))} />
         </div>
       </div>
 
-      {/* Printable / Exportable Document */}
       <div ref={printRef} style={{ background: '#FFFFFF', color: '#111827', padding: '48px', maxWidth: '900px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
-
-        <h1 style={{ textAlign: 'center', fontSize: '26px', fontWeight: 800, letterSpacing: '0.08em', margin: '0 0 32px 0' }}>QUOTATION</h1>
+        <h1 style={{ textAlign: 'center', fontSize: '26px', fontWeight: 800, letterSpacing: '0.08em', margin: '0 0 32px 0' }}>INVOICE</h1>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
-          <div><strong>Quotation No:</strong> {formData.quotation_number}</div>
+          <div><strong>Invoice No:</strong> {formData.invoice_number}</div>
           <div><strong>Date:</strong> {today}</div>
         </div>
         <div style={{ fontSize: '14px', marginBottom: '32px' }}>
-          <strong>Valid Until:</strong> {formData.valid_until ? format(new Date(formData.valid_until), 'dd MMMM yyyy') : '—'}
+          <strong>Due Date:</strong> {formData.due_date ? format(new Date(formData.due_date), 'dd MMMM yyyy') : '—'}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
@@ -264,11 +253,12 @@ export function QuotationForm() {
               {company?.city}{company?.city && ', '}{company?.country}<br />
               Tel: {company?.phone || '—'}<br />
               Email: {company?.email || '—'}<br />
-              {company?.website && <>Website: {company.website}</>}
+              {company?.website && <>Website: {company.website}<br /></>}
+              {company?.tin_number && <>TIN: {company.tin_number}</>}
             </p>
           </div>
           <div>
-            <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Client Details</h4>
+            <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Bill To</h4>
             <p style={{ margin: 0, fontWeight: 700 }}>{selectedClient?.company_name || selectedClient?.name || 'Select a client'}</p>
             <p style={{ margin: '4px 0 0 0', fontSize: '13px', lineHeight: 1.6 }}>
               {selectedClient?.company_name && <>Contact Person: {selectedClient?.name}<br /></>}
@@ -278,27 +268,14 @@ export function QuotationForm() {
           </div>
         </div>
 
-        <div style={{ marginBottom: '24px' }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Subject</h4>
-          <input
-            value={formData.subject}
-            onChange={e => setFormData({ ...formData, subject: e.target.value })}
-            style={{ width: '100%', fontWeight: 600, fontSize: '14px', border: '1px solid transparent', padding: '4px 0', fontFamily: 'inherit', background: 'transparent' }}
-          />
-        </div>
-
-        <p style={{ fontSize: '14px', lineHeight: 1.7, marginBottom: '24px' }}>
-          Dear Sir/Madam,<br />
-          Thank you for your inquiry. We are pleased to submit our quotation as follows:
-        </p>
-
+        <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Description of Services</h4>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', marginBottom: '4px' }}>
           <thead>
             <tr>
               <th style={{ padding: '10px 8px', background: '#111827', color: '#FFFFFF', fontWeight: 600, fontSize: '13px' }}>Description</th>
               <th style={{ padding: '10px 8px', background: '#111827', color: '#FFFFFF', fontWeight: 600, fontSize: '13px', width: '80px' }}>Quantity</th>
               <th style={{ padding: '10px 8px', background: '#111827', color: '#FFFFFF', fontWeight: 600, fontSize: '13px', width: '140px' }}>Unit Price (UGX)</th>
-              <th style={{ padding: '10px 8px', background: '#111827', color: '#FFFFFF', fontWeight: 600, fontSize: '13px', width: '140px' }}>Total (UGX)</th>
+              <th style={{ padding: '10px 8px', background: '#111827', color: '#FFFFFF', fontWeight: 600, fontSize: '13px', width: '140px' }}>Amount (UGX)</th>
               <th className="no-export" style={{ width: '32px' }}></th>
             </tr>
           </thead>
@@ -306,7 +283,7 @@ export function QuotationForm() {
             {formData.items.map((item, index) => (
               <tr key={index} style={{ borderBottom: '1px solid #E5E7EB' }}>
                 <td style={{ padding: '4px' }}>
-                  <input value={item.description} onChange={e => handleItemChange(index, 'description', e.target.value)} placeholder="Item description"
+                  <input value={item.description} onChange={e => handleItemChange(index, 'description', e.target.value)} placeholder="Service description"
                     style={{ width: '100%', padding: '8px', border: '1px solid transparent', fontFamily: 'inherit', background: 'transparent' }} />
                 </td>
                 <td style={{ padding: '4px' }}>
@@ -342,22 +319,13 @@ export function QuotationForm() {
               <span>{taxAmount.toLocaleString()}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderTop: '2px solid #111827', marginTop: '4px', fontSize: '16px', fontWeight: 700 }}>
-              <span>Grand Total</span><span>UGX {grandTotal.toLocaleString()}</span>
+              <span>Total Due</span><span>UGX {grandTotal.toLocaleString()}</span>
             </div>
           </div>
         </div>
 
         <div style={{ marginBottom: '24px' }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Terms and Conditions</h4>
-          <textarea
-            value={formData.terms}
-            onChange={e => setFormData({ ...formData, terms: e.target.value })}
-            style={{ width: '100%', minHeight: '110px', padding: '8px', border: '1px solid #E5E7EB', fontFamily: 'inherit', fontSize: '13px', lineHeight: 1.7, boxSizing: 'border-box' }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '32px' }}>
-          <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Bank Details</h4>
+          <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Payment Details</h4>
           <p style={{ margin: 0, fontSize: '13px', lineHeight: 1.7 }}>
             Bank Name: {company?.bank_name || '—'}<br />
             Account Name: {company?.bank_account_name || '—'}<br />
@@ -366,30 +334,31 @@ export function QuotationForm() {
           </p>
         </div>
 
+        <div style={{ marginBottom: '24px' }}>
+          <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Payment Terms</h4>
+          <textarea
+            value={formData.payment_terms}
+            onChange={e => setFormData({ ...formData, payment_terms: e.target.value })}
+            style={{ width: '100%', minHeight: '90px', padding: '8px', border: '1px solid #E5E7EB', fontFamily: 'inherit', fontSize: '13px', lineHeight: 1.7, boxSizing: 'border-box' }}
+          />
+        </div>
+
         <div style={{ marginBottom: '32px' }}>
-          <h4 style={{ margin: '0 0 16px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Acceptance</h4>
-          <p style={{ fontSize: '13px', marginBottom: '24px' }}>I/We accept this quotation and authorize commencement of the services.</p>
-          <p style={{ fontSize: '13px', margin: '24px 0' }}>Client Signature: _____________________</p>
-          <p style={{ fontSize: '13px', margin: '24px 0' }}>Name: _______________________________</p>
-          <p style={{ fontSize: '13px', margin: '24px 0' }}>Date: ________________________________</p>
+          <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Notes</h4>
+          <textarea
+            value={formData.notes}
+            onChange={e => setFormData({ ...formData, notes: e.target.value })}
+            style={{ width: '100%', minHeight: '60px', padding: '8px', border: '1px solid #E5E7EB', fontFamily: 'inherit', fontSize: '13px', lineHeight: 1.7, boxSizing: 'border-box' }}
+          />
         </div>
 
         <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '16px', fontSize: '13px' }}>
-          <p style={{ margin: '0 0 4px 0', color: '#6B7280' }}>Prepared By:</p>
+          <p style={{ margin: '0 0 4px 0', color: '#6B7280' }}>Authorized By:</p>
           <p style={{ margin: 0, fontWeight: 700 }}>{profile?.first_name} {profile?.last_name}</p>
           <p style={{ margin: 0 }}>{profile?.job_title || ''}</p>
           <p style={{ margin: 0 }}>{company?.name}</p>
-          <p style={{ margin: 0 }}>Tel: {profile?.phone || company?.phone || '—'}</p>
         </div>
       </div>
-
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        @media print {
-          body * { visibility: hidden; }
-          .no-export { display: none !important; }
-        }
-      `}} />
     </div>
   )
 }

@@ -27,6 +27,7 @@ const ClientProfile = lazy(() => import('../pages/sales/ClientProfile').then(m =
 const Quotations = lazy(() => import('../pages/sales/Quotations').then(m => ({ default: m.Quotations })))
 const QuotationForm = lazy(() => import('../pages/sales/QuotationForm').then(m => ({ default: m.QuotationForm })))
 const Invoices = lazy(() => import('../pages/sales/Invoices').then(m => ({ default: m.Invoices })))
+const InvoiceForm = lazy(() => import('../pages/sales/InvoiceForm').then(m => ({ default: m.InvoiceForm })))
 const Commissions = lazy(() => import('../pages/sales/Commissions').then(m => ({ default: m.Commissions })))
 
 const Directory = lazy(() => import('../pages/employees/Directory').then(m => ({ default: m.Directory })))
@@ -117,6 +118,8 @@ export const router = createBrowserRouter([
       { path: 'sales/quotations/new', element: <SuspenseWrapper><QuotationForm /></SuspenseWrapper> },
       { path: 'sales/quotations/:id', element: <SuspenseWrapper><QuotationForm /></SuspenseWrapper> },
       { path: 'sales/invoices', element: <SuspenseWrapper><Invoices /></SuspenseWrapper> },
+      { path: 'sales/invoices/new', element: <SuspenseWrapper><InvoiceForm /></SuspenseWrapper> },
+      { path: 'sales/invoices/:id', element: <SuspenseWrapper><InvoiceForm /></SuspenseWrapper> },
       { path: 'sales/commissions', element: <SuspenseWrapper><Commissions /></SuspenseWrapper> },
 
       // People / Employees

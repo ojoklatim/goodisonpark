@@ -218,6 +218,8 @@ CREATE TABLE quotations (
   total NUMERIC(15,2) DEFAULT 0,
   currency TEXT DEFAULT 'UGX',
   valid_until DATE,
+  subject TEXT,
+  terms TEXT,
   notes TEXT,
   created_by UUID REFERENCES profiles(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -233,6 +235,7 @@ CREATE TABLE invoices (
   status TEXT DEFAULT 'unpaid' CHECK (status IN ('draft','unpaid','partial','paid','overdue','cancelled')),
   items JSONB DEFAULT '[]',
   subtotal NUMERIC(15,2) DEFAULT 0,
+  tax_rate NUMERIC(5,2) DEFAULT 18,
   tax_amount NUMERIC(15,2) DEFAULT 0,
   discount NUMERIC(15,2) DEFAULT 0,
   total NUMERIC(15,2) DEFAULT 0,
@@ -240,6 +243,7 @@ CREATE TABLE invoices (
   currency TEXT DEFAULT 'UGX',
   due_date DATE,
   paid_at TIMESTAMPTZ,
+  payment_terms TEXT,
   notes TEXT,
   created_by UUID REFERENCES profiles(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
