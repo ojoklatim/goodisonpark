@@ -7,6 +7,7 @@ import { DataTable } from '../../components/ui/DataTable'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
+import { RecordDetailModal } from '../../components/ui/RecordDetailModal'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 
@@ -14,6 +15,7 @@ export function Training() {
   const { company, user } = useAuth()
   const queryClient = useQueryClient()
   const [showModal, setShowModal] = useState(false)
+  const [viewingRecord, setViewingRecord] = useState(null)
   const [deptFilter, setDeptFilter] = useState('')
   const [employeeFilter, setEmployeeFilter] = useState('')
 
@@ -101,7 +103,7 @@ export function Training() {
     { header: 'Certificate', accessorKey: 'certificate_url', cell: info => {
       const url = info.getValue()
       if (!url) return <span style={{ color: '#9CA3AF', fontSize: '12px' }}>None</span>
-      return <a href={url} target="_blank" rel="noreferrer" style={{ color: "var(--gp-blue)", fontSize: '13px' }}>Download</a>
+      return <a href={url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: "var(--gp-blue)", fontSize: '13px' }}>Download</a>
     }},
     { header: 'Notes', accessorKey: 'notes', cell: info => <span style={{ color: '#6B7280', fontSize: '13px' }}>{info.getValue() || '-'}</span> }
   ]
@@ -159,7 +161,21 @@ export function Training() {
         )}
       </div>
 
-      <DataTable columns={columns} data={filteredRecords} isLoading={isLoading} />
+      <DataTable columns={columns} data={filteredRecords} isLoading={isLoading} onRowClick={setViewingRecord} />
+
+      <RecordDetailModal
+        isOpen={!!viewingRecord}
+        onClose={() => setViewingRecord(null)}
+        title={viewingRecord?.title || 'Training Record'}
+        fields={viewingRecord ? [
+          { label: 'Employee', value: viewingRecord.employee ? `${viewingRecord.employee.first_name} ${viewingRecord.employee.last_name}` : null },
+          { label: 'Department', value: viewingRecord.employee?.department },
+          { label: 'Provider', value: viewingRecord.provider },
+          { label: 'Date Completed', value: viewingRecord.date_completed ? new Date(viewingRecord.date_completed).toLocaleDateString() : null },
+          { label: 'Certificate', value: viewingRecord.certificate_url ? 'Available (download from list)' : 'None' },
+          { label: 'Notes', value: viewingRecord.notes },
+        ] : []}
+      />
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Add Training Record">
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto', padding: '4px' }}>

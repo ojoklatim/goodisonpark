@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { StatCard } from '../../components/ui/StatCard'
 import { Modal } from '../../components/ui/Modal'
+import { RecordDetailModal } from '../../components/ui/RecordDetailModal'
 import { Select } from '../../components/ui/Select'
 import { DollarSign, Clock, Trophy, Plus } from 'lucide-react'
 
@@ -18,6 +19,7 @@ export function Commissions() {
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [editingRateId, setEditingRateId] = useState(null)
   const [editingRateValue, setEditingRateValue] = useState('')
+  const [viewingCommission, setViewingCommission] = useState(null)
   const [form, setForm] = useState({ deal_id: '', profile_id: '', rate: '' })
 
   const { data: commissions = [], isLoading } = useQuery({
@@ -154,6 +156,7 @@ export function Commissions() {
       header: ({ table }) => (
         <input 
           type="checkbox" 
+          onClick={e => e.stopPropagation()}
           onChange={(e) => {
             const pendingIds = table.getRowModel().rows.filter(r => r.original.status === 'pending').map(r => r.original.id)
             setSelectedIds(e.target.checked ? pendingIds : [])
@@ -166,6 +169,7 @@ export function Commissions() {
         row.original.status === 'pending' ? (
           <input 
             type="checkbox" 
+            onClick={e => e.stopPropagation()}
             checked={selectedIds.includes(row.original.id)}
             onChange={(e) => {
               if (e.target.checked) setSelectedIds(prev => [...prev, row.original.id])
@@ -217,7 +221,7 @@ export function Commissions() {
       header: 'Actions',
       id: 'actions',
       cell: ({ row }) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           {row.original.status === 'pending' && (
             <Button variant="secondary" size="sm" onClick={() => bulkApprove.mutate([row.original.id])}>Approve</Button>
           )}
@@ -252,7 +256,22 @@ export function Commissions() {
         </Button>
       </div>
 
-      <DataTable data={commissions} columns={columns} isLoading={isLoading} />
+      <DataTable data={commissions} columns={columns} isLoading={isLoading} onRowClick={setViewingCommission} />
+
+      <RecordDetailModal
+        isOpen={!!viewingCommission}
+        onClose={() => setViewingCommission(null)}
+        title="Commission Details"
+        fields={viewingCommission ? [
+          { label: 'Agent', value: viewingCommission.profiles ? `${viewingCommission.profiles.first_name} ${viewingCommission.profiles.last_name}` : null },
+          { label: 'Deal', value: viewingCommission.deals?.title },
+          { label: 'Deal Value', value: `UGX ${Number(viewingCommission.deals?.value || 0).toLocaleString()}` },
+          { label: 'Rate', value: `${viewingCommission.rate}%` },
+          { label: 'Commission Amount', value: `UGX ${Number(viewingCommission.amount || 0).toLocaleString()}` },
+          { label: 'Status', value: viewingCommission.status },
+          { label: 'Created', value: viewingCommission.created_at ? new Date(viewingCommission.created_at).toLocaleDateString() : null },
+        ] : []}
+      />
 
       <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Add Commission">
         <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

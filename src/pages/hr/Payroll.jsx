@@ -130,7 +130,7 @@ export function Payroll() {
     { header: 'Actions', id: 'actions', cell: info => {
       const row = info.row.original
       return (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           <button onClick={() => setDetailModal({ show: true, record: row })} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
           {row.status === 'draft' && (
             <button onClick={() => handleApprove(row)} style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer', fontWeight: 600 }}>Process</button>
@@ -194,7 +194,7 @@ export function Payroll() {
         </div>
       </div>
 
-      <DataTable columns={columns} data={payrollRecords} isLoading={loadingPayroll || loadingProfiles} />
+      <DataTable columns={columns} data={payrollRecords} isLoading={loadingPayroll || loadingProfiles} onRowClick={(record) => setDetailModal({ show: true, record })} />
 
       {/* Detail Modal */}
       {detailModal.record && (

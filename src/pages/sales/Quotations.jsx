@@ -86,7 +86,7 @@ export function Quotations() {
         action={<Button variant="primary" onClick={() => navigate('/dashboard/sales/quotations/new')}>New Quotation</Button>} 
       />
       <div style={{ marginTop: '24px' }}>
-        <DataTable data={quotations} columns={columns} isLoading={isLoading} />
+        <DataTable data={quotations} columns={columns} isLoading={isLoading} onRowClick={(row) => navigate(`/dashboard/sales/quotations/${row.id}`)} />
       </div>
     </div>
   )

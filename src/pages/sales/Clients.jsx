@@ -68,7 +68,7 @@ export function Clients() {
         </div>
       </div>
 
-      <DataTable data={filteredClients} columns={columns} isLoading={isLoading} />
+      <DataTable data={filteredClients} columns={columns} isLoading={isLoading} onRowClick={(row) => navigate(`/dashboard/sales/clients/${row.id}`)} />
     </div>
   )
 }

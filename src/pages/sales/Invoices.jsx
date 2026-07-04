@@ -106,7 +106,7 @@ export function Invoices() {
     <div>
       <PageHeader title="Invoices" action={<Button variant="primary" onClick={() => navigate('/dashboard/sales/invoices/new')}>New Invoice</Button>} />
       <div style={{ marginTop: '24px' }}>
-        <DataTable data={invoices} columns={columns} isLoading={isLoading} />
+        <DataTable data={invoices} columns={columns} isLoading={isLoading} onRowClick={(row) => navigate(`/dashboard/sales/invoices/${row.id}`)} />
       </div>
 
       <Modal isOpen={isPaymentOpen} onClose={() => setIsPaymentOpen(false)} title="Record Payment">

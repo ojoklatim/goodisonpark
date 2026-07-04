@@ -7,6 +7,7 @@ import { DataTable } from '../../components/ui/DataTable'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
+import { RecordDetailModal } from '../../components/ui/RecordDetailModal'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Spinner } from '../../components/ui/Spinner'
@@ -35,6 +36,7 @@ export function Leave() {
   const [tab, setTab] = useState('requests')
   const [showModal, setShowModal] = useState(false)
   const [calDate, setCalDate] = useState(new Date())
+  const [viewingLeave, setViewingLeave] = useState(null)
 
   const [form, setForm] = useState({ leave_type: 'annual', start_date: '', end_date: '', reason: '' })
 
@@ -118,7 +120,7 @@ export function Leave() {
       const row = info.row.original
       if (isManager && row.status === 'pending') {
         return (
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
             <button onClick={() => updateStatus.mutate({ id: row.id, status: 'approved' })} style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer', fontWeight: 600 }}>Approve</button>
             <button onClick={() => updateStatus.mutate({ id: row.id, status: 'rejected' })} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }}>Reject</button>
           </div>
@@ -163,7 +165,24 @@ export function Leave() {
       </div>
 
       {tab === 'requests' && (
-        <DataTable columns={columns} data={leaves} isLoading={isLoading} />
+        <>
+          <DataTable columns={columns} data={leaves} isLoading={isLoading} onRowClick={setViewingLeave} />
+
+          <RecordDetailModal
+            isOpen={!!viewingLeave}
+            onClose={() => setViewingLeave(null)}
+            title="Leave Request"
+            fields={viewingLeave ? [
+              { label: 'Employee', value: viewingLeave.employee ? `${viewingLeave.employee.first_name} ${viewingLeave.employee.last_name}` : null },
+              { label: 'Leave Type', value: fmt(viewingLeave.leave_type) },
+              { label: 'Start Date', value: viewingLeave.start_date },
+              { label: 'End Date', value: viewingLeave.end_date },
+              { label: 'Days', value: viewingLeave.days_count },
+              { label: 'Status', value: fmt(viewingLeave.status) },
+              { label: 'Reason', value: viewingLeave.reason },
+            ] : []}
+          />
+        </>
       )}
 
       {tab === 'calendar' && (

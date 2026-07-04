@@ -7,6 +7,7 @@ import { DataTable } from '../../components/ui/DataTable'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
+import { RecordDetailModal } from '../../components/ui/RecordDetailModal'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Spinner } from '../../components/ui/Spinner'
@@ -26,6 +27,7 @@ export function Expenses() {
   const { company, user, profile } = useAuth()
   const queryClient = useQueryClient()
   const [showSubmitModal, setShowSubmitModal] = useState(false)
+  const [viewingExpense, setViewingExpense] = useState(null)
   const [rejectModal, setRejectModal] = useState({ show: false, id: null, notes: '' })
 
   const [filters, setFilters] = useState({ status: '', category: '', department_id: '' })
@@ -146,7 +148,7 @@ export function Expenses() {
     { header: 'Description', accessorKey: 'description', cell: info => <span style={{ color: '#4B5563', fontSize: '13px' }}>{info.getValue() || '-'}</span> },
     { header: 'Amount', accessorKey: 'amount', cell: info => <span style={{ fontWeight: 700 }}>{currencyFmt(info.getValue())}</span> },
     { header: 'Date', accessorKey: 'date', cell: info => new Date(info.getValue()).toLocaleDateString() },
-    { header: 'Receipt', accessorKey: 'receipt_url', cell: info => info.getValue() ? <a href={info.getValue()} target="_blank" rel="noreferrer" style={{ color: "var(--gp-blue)" }}>View</a> : <span style={{ color: '#9CA3AF', fontSize: '12px' }}>None</span> },
+    { header: 'Receipt', accessorKey: 'receipt_url', cell: info => info.getValue() ? <a href={info.getValue()} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: "var(--gp-blue)" }}>View</a> : <span style={{ color: '#9CA3AF', fontSize: '12px' }}>None</span> },
     { header: 'Status', accessorKey: 'status', cell: info => {
       const v = info.getValue()
       return <Badge variant={v === 'approved' || v === 'paid' ? 'success' : v === 'rejected' ? 'inactive' : 'active'} label={fmt(v)} />
@@ -155,11 +157,11 @@ export function Expenses() {
       const row = info.row.original
       if (!isManager || row.status !== 'pending') {
         return row.status === 'approved' ? (
-          <button onClick={() => updateExpense.mutate({ id: row.id, updates: { status: 'paid' } })} style={{ background: 'none', border: 'none', color: '#A855F7', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>Mark Paid</button>
+          <button onClick={(e) => { e.stopPropagation(); updateExpense.mutate({ id: row.id, updates: { status: 'paid' } }) }} style={{ background: 'none', border: 'none', color: '#A855F7', cursor: 'pointer', fontWeight: 600, fontSize: '13px' }}>Mark Paid</button>
         ) : null
       }
       return (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           <button onClick={() => updateExpense.mutate({ id: row.id, updates: { status: 'approved' } })} style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer', fontWeight: 600 }}>Approve</button>
           <button onClick={() => setRejectModal({ show: true, id: row.id, notes: '' })} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }}>Reject</button>
         </div>
@@ -216,7 +218,22 @@ export function Expenses() {
         )}
       </div>
 
-      <DataTable columns={columns} data={filteredExpenses} isLoading={isLoading} />
+      <DataTable columns={columns} data={filteredExpenses} isLoading={isLoading} onRowClick={setViewingExpense} />
+
+      <RecordDetailModal
+        isOpen={!!viewingExpense}
+        onClose={() => setViewingExpense(null)}
+        title="Expense Details"
+        fields={viewingExpense ? [
+          { label: 'Employee', value: viewingExpense.submitter ? `${viewingExpense.submitter.first_name} ${viewingExpense.submitter.last_name}` : null },
+          { label: 'Category', value: viewingExpense.category },
+          { label: 'Description', value: viewingExpense.description },
+          { label: 'Amount', value: currencyFmt(viewingExpense.amount) },
+          { label: 'Date', value: viewingExpense.date ? new Date(viewingExpense.date).toLocaleDateString() : null },
+          { label: 'Status', value: fmt(viewingExpense.status) },
+          { label: 'Receipt', value: viewingExpense.receipt_url ? 'Available (open from list)' : 'None' },
+        ] : []}
+      />
 
       {/* Submit Modal */}
       <Modal isOpen={showSubmitModal} onClose={() => setShowSubmitModal(false)} title="Submit Expense">
