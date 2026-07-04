@@ -224,13 +224,7 @@ export function Expenses() {
           <Select label="Category" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
             options={CATEGORIES.map(c => ({ value: c, label: c }))} />
           <Input label="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <div style={{ flex: 2 }}><Input label="Amount" type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} required /></div>
-            <div style={{ flex: 1 }}>
-              <Select label="Currency" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}
-                options={['UGX','USD','EUR','GBP','KES'].map(c => ({ value: c, label: c }))} />
-            </div>
-          </div>
+          <Input label="Amount (UGX)" type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} required />
           {form.amount && parseFloat(form.amount) > THRESHOLD && (
             <div style={{ padding: '10px', background: '#FEF3C7', border: '1px solid #F59E0B', fontSize: '13px', color: '#92400E' }}>
               ⚠️ Amount exceeds approval threshold — an approval request will be created automatically.

@@ -13,6 +13,11 @@ CREATE TABLE companies (
   website TEXT,
   subscription_plan TEXT DEFAULT 'trial' CHECK (subscription_plan IN ('trial','starter','professional','enterprise')),
   subscription_expires_at TIMESTAMPTZ,
+  bank_name TEXT,
+  bank_account_name TEXT,
+  bank_account_number TEXT,
+  mobile_money_number TEXT,
+  tin_number TEXT,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()

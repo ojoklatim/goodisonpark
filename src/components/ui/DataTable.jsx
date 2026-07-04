@@ -26,6 +26,7 @@ export function DataTable({
   emptyIcon,
   emptyTitle = 'No data found',
   emptyDescription,
+  onRowClick,
 }) {
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState(null)
@@ -172,9 +173,10 @@ export function DataTable({
               paginated.map((row, i) => (
                 <tr
                   key={row[keyField] || i}
-                  style={{ borderBottom: "1px solid var(--gp-border-light)" }}
+                  style={{ borderBottom: "1px solid var(--gp-border-light)", cursor: onRowClick ? 'pointer' : 'default' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--gp-background)' }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = '' }}
+                  onClick={() => onRowClick && onRowClick(row)}
                 >
                   {columns.map((col) => {
                     const accessor = col.accessor || col.accessorKey

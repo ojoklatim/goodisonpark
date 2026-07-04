@@ -530,33 +530,18 @@ export function Budgets() {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
-              <div>
-                <label style={{ fontSize: 12, color: '#9CA3AF', display: 'block', marginBottom: 6 }}>Amount</label>
-                <input
-                  type="number"
-                  value={form.amount}
-                  onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-                  placeholder="0"
-                  style={{
-                    width: '100%', background: "var(--gp-background)", border: '1px solid #2A2A2A',
-                    borderRadius: 0, color: '#fff', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, color: '#9CA3AF', display: 'block', marginBottom: 6 }}>Currency</label>
-                <select
-                  value={form.currency}
-                  onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
-                  style={{
-                    width: '100%', background: "var(--gp-background)", border: '1px solid #2A2A2A',
-                    borderRadius: 0, color: '#fff', padding: '8px 12px', fontSize: 13,
-                  }}
-                >
-                  {['UGX', 'USD', 'EUR'].map((c) => <option key={c}>{c}</option>)}
-                </select>
-              </div>
+            <div>
+              <label style={{ fontSize: 12, color: '#9CA3AF', display: 'block', marginBottom: 6 }}>Amount (UGX)</label>
+              <input
+                type="number"
+                value={form.amount}
+                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                placeholder="0"
+                style={{
+                  width: '100%', background: "var(--gp-background)", border: '1px solid var(--gp-border-light)',
+                  borderRadius: 0, color: 'var(--gp-black)', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
+                }}
+              />
             </div>
 
             <div>

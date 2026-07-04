@@ -38,6 +38,14 @@ export function Settings() {
     website: companyData?.website || ''
   })
 
+  const [financialData, setFinancialData] = useState({
+    bank_name: companyData?.bank_name || '',
+    bank_account_name: companyData?.bank_account_name || '',
+    bank_account_number: companyData?.bank_account_number || '',
+    mobile_money_number: companyData?.mobile_money_number || '',
+    tin_number: companyData?.tin_number || ''
+  })
+
   // Update formData when data is loaded
   React.useEffect(() => {
     if (companyData) {
@@ -50,6 +58,13 @@ export function Settings() {
         phone: companyData.phone || '',
         email: companyData.email || '',
         website: companyData.website || ''
+      })
+      setFinancialData({
+        bank_name: companyData.bank_name || '',
+        bank_account_name: companyData.bank_account_name || '',
+        bank_account_number: companyData.bank_account_number || '',
+        mobile_money_number: companyData.mobile_money_number || '',
+        tin_number: companyData.tin_number || ''
       })
     }
   }, [companyData])
@@ -73,6 +88,11 @@ export function Settings() {
   const handleSave = (e) => {
     e.preventDefault()
     updateCompany.mutate(formData)
+  }
+
+  const handleFinancialSave = (e) => {
+    e.preventDefault()
+    updateCompany.mutate(financialData)
   }
 
   const handleLogoUpload = async () => {
@@ -103,7 +123,7 @@ export function Settings() {
     <div className="settings-layout" style={{ display: 'flex', gap: '32px' }}>
       {/* Sidebar Navigation */}
       <div className="settings-sidebar" style={{ width: '200px', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
-        {['general', 'branding', 'integrations'].map(tab => (
+        {['general', 'branding', 'financial', 'integrations'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -179,9 +199,28 @@ export function Settings() {
           </div>
         )}
 
+        {activeTab === 'financial' && (
+          <form onSubmit={handleFinancialSave}>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px', color: 'var(--gp-black)' }}>Financial Details</h3>
+            <p style={{ fontSize: '13px', color: '#6B7280', marginBottom: '24px' }}>
+              These details are pulled automatically into every quotation and invoice you generate — set them once here.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+              <Input label="Bank Name" value={financialData.bank_name} onChange={e => setFinancialData({...financialData, bank_name: e.target.value})} placeholder="e.g. Absa Bank Uganda" />
+              <Input label="Bank Account Name" value={financialData.bank_account_name} onChange={e => setFinancialData({...financialData, bank_account_name: e.target.value})} placeholder="e.g. Goodison Park Services Ltd" />
+              <Input label="Bank Account Number" value={financialData.bank_account_number} onChange={e => setFinancialData({...financialData, bank_account_number: e.target.value})} />
+              <Input label="Mobile Money Number" value={financialData.mobile_money_number} onChange={e => setFinancialData({...financialData, mobile_money_number: e.target.value})} placeholder="+256 XXX XXX XXX" />
+              <Input label="TIN Number" value={financialData.tin_number} onChange={e => setFinancialData({...financialData, tin_number: e.target.value})} placeholder="100XXXXXXX" />
+            </div>
+            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>
+              <Button type="submit" variant="primary" disabled={updateCompany.isPending}>Save Changes</Button>
+            </div>
+          </form>
+        )}
+
         {activeTab === 'integrations' && (
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px' }}>Integrations</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', color: 'var(--gp-black)' }}>Integrations</h3>
             <p style={{ color: '#6B7280' }}>No active integrations. API keys and webhooks will appear here.</p>
           </div>
         )}
