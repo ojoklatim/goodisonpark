@@ -236,7 +236,7 @@ function OverviewTab({ deal, updateDeal }) {
       <Input label="Expected Close Date" type="date" value={formData.expected_close_date} onChange={e => setFormData({...formData, expected_close_date: e.target.value})} />
       
       <div>
-        <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, marginBottom: '8px', color: '#111827' }}>Notes</label>
+        <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, marginBottom: '8px', color: 'var(--gp-black)' }}>Notes</label>
         <textarea 
           value={formData.notes} 
           onChange={e => setFormData({...formData, notes: e.target.value})}
@@ -293,7 +293,7 @@ function ActivitiesTab({ activities, logActivity }) {
                 <Icon size={16} color="#4B5563" />
               </div>
               <div>
-                <p style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 600, color: '#111827' }}>{act.title || act.type}</p>
+                <p style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 600, color: 'var(--gp-black)' }}>{act.title || act.type}</p>
                 {act.description && <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#4B5563' }}>{act.description}</p>}
                 <p style={{ margin: 0, fontSize: '12px', color: '#9CA3AF' }}>
                   {act.profiles?.first_name} {act.profiles?.last_name} • {formatDistanceToNow(new Date(act.created_at))} ago
@@ -369,7 +369,7 @@ function FilesTab({ files, uploadFile, uploading, setUploading }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <FileText size={20} color="#9CA3AF" />
                 <div>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 500, color: '#111827' }}>{f.title}</p>
+                  <p style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 500, color: 'var(--gp-black)' }}>{f.title}</p>
                   <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>{format(new Date(f.created_at), 'MMM dd, yyyy')}</p>
                 </div>
               </div>

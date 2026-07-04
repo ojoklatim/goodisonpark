@@ -32,9 +32,9 @@ function Toast({ id, title, body, type = 'info' }) {
       style={{
         width: 320,
         background: "var(--gp-dark)",
-        border: `1px solid #2A2A2A`,
+        border: `1px solid var(--gp-border-light)`,
         borderLeft: `3px solid ${color}`,
-        color: '#FFFFFF',
+        color: 'var(--gp-black)',
         padding: '12px 14px',
         animation: 'slideInRight 0.3s ease',
         display: 'flex',

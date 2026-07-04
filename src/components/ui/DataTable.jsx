@@ -111,7 +111,7 @@ export function DataTable({
               style={{
                 display: 'flex', alignItems: 'center', gap: 4,
                 padding: '5px 12px', fontSize: '12px', fontWeight: 500,
-                background: "var(--gp-dark)", color: '#FFFFFF', border: '1px solid #2A2A2A',
+                background: "var(--gp-dark)", color: 'var(--gp-black)', border: '1px solid var(--gp-border-light)',
                 cursor: 'pointer', borderRadius: 0, fontFamily: 'Inter, sans-serif',
               }}
             >

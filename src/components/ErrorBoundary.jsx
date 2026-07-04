@@ -39,7 +39,7 @@ export class ErrorBoundary extends React.Component {
             <span style={{ fontSize: 15, fontWeight: 800, color: "var(--gp-black)" }}>GP</span>
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>GOODISON PARK</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--gp-black)', lineHeight: 1.2 }}>GOODISON PARK</div>
             <div style={{ fontSize: 10, color: '#9CA3AF', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Properties</div>
           </div>
         </div>
@@ -54,7 +54,7 @@ export class ErrorBoundary extends React.Component {
           <span style={{ fontSize: 28, color: '#EF4444', fontWeight: 800 }}>!</span>
         </div>
 
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#FFFFFF', marginBottom: 12 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--gp-black)', marginBottom: 12 }}>
           Something went wrong
         </h1>
         <p style={{ fontSize: 14, color: '#9CA3AF', marginBottom: 8, textAlign: 'center', maxWidth: 480 }}>

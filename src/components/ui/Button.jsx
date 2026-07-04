@@ -9,9 +9,9 @@ const variants = {
   },
   secondary: {
     background: "var(--gp-dark)",
-    color: '#FFFFFF',
+    color: 'var(--gp-black)',
     fontWeight: 500,
-    border: '1px solid #2A2A2A',
+    border: '1px solid var(--gp-border-light)',
   },
   danger: {
     background: '#EF4444',

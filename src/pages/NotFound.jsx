@@ -34,7 +34,7 @@ export function NotFound() {
       <h1 style={{
         fontSize: 22,
         fontWeight: 700,
-        color: '#FFFFFF',
+        color: 'var(--gp-black)',
         marginBottom: 12,
         textAlign: 'center',
       }}>
