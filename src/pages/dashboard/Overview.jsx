@@ -7,7 +7,7 @@ import { Badge } from '../../components/ui/Badge'
 import { PageHeader } from '../../components/ui/PageHeader'
 import { Users, Briefcase, FileText, DollarSign, Clock, CheckCircle } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import { format } from 'date-fns'
+import { format, formatDistanceToNow } from 'date-fns'
 import { formatCurrency } from '../../lib/utils'
 import { CheckInWidget } from '../../components/hr/CheckInWidget'
 
@@ -112,6 +112,28 @@ export function Overview() {
         { name: 'In Progress', value: counts.in_progress, color: COLORS.blue },
         { name: 'Done', value: counts.done, color: COLORS.green }
       ]
+    },
+    enabled: !!companyId
+  })
+
+  // Fetch Recent Activity
+  const { data: recentActivity = [], isLoading: loadingActivity } = useQuery({
+    queryKey: ['dashboard_recent_activity', companyId],
+    queryFn: async () => {
+      if (!companyId) return []
+      const [projectsRes, tasksRes, dealsRes] = await Promise.all([
+        insforge.from('projects').select('id, name, created_at').eq('company_id', companyId).order('created_at', { ascending: false }).limit(5),
+        insforge.from('tasks').select('id, title, created_at').eq('company_id', companyId).order('created_at', { ascending: false }).limit(5),
+        insforge.from('deals').select('id, name, created_at').eq('company_id', companyId).order('created_at', { ascending: false }).limit(5)
+      ])
+
+      const activity = [
+        ...(projectsRes.data || []).map(p => ({ id: p.id, type: 'Project', title: p.name, time: p.created_at, color: COLORS.blue })),
+        ...(tasksRes.data || []).map(t => ({ id: t.id, type: 'Task', title: t.title, time: t.created_at, color: COLORS.green })),
+        ...(dealsRes.data || []).map(d => ({ id: d.id, type: 'Deal', title: d.name, time: d.created_at, color: COLORS.amber }))
+      ]
+
+      return activity.sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 5)
     },
     enabled: !!companyId
   })
@@ -266,15 +288,29 @@ export function Overview() {
                 <h3 style={{ fontSize: '16px', fontWeight: 600, color: "var(--gp-black)", margin: 0 }}>Recent Activity</h3>
               </div>
               <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ width: '32px', height: '32px', background: 'var(--gp-background)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <CheckCircle size={16} color="#22C55E" />
-                  </div>
-                  <div>
-                    <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--gp-black)' }}><span style={{ fontWeight: 600 }}>Active Projects</span> update real-time dashboard events.</p>
-                    <span style={{ fontSize: '12px', color: 'var(--gp-muted)' }}>Just now</span>
-                  </div>
-                </div>
+                {loadingActivity ? (
+                  <div style={{ textAlign: 'center', color: 'var(--gp-muted)', fontSize: '14px' }}>Loading activity...</div>
+                ) : recentActivity.length === 0 ? (
+                  <div style={{ textAlign: 'center', color: 'var(--gp-muted)', fontSize: '14px' }}>No recent activity.</div>
+                ) : (
+                  recentActivity.map((item, i) => (
+                    <div key={`${item.type}-${item.id}-${i}`} style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ width: '32px', height: '32px', background: 'var(--gp-background)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        {item.type === 'Project' && <Briefcase size={16} color={item.color} />}
+                        {item.type === 'Task' && <CheckCircle size={16} color={item.color} />}
+                        {item.type === 'Deal' && <FileText size={16} color={item.color} />}
+                      </div>
+                      <div>
+                        <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--gp-black)' }}>
+                          <span style={{ fontWeight: 600 }}>New {item.type}:</span> {item.title}
+                        </p>
+                        <span style={{ fontSize: '12px', color: 'var(--gp-muted)' }}>
+                          {formatDistanceToNow(new Date(item.time), { addSuffix: true })}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
