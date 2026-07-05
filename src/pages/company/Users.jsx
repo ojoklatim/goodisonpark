@@ -219,9 +219,9 @@ export function Users() {
               </div>
             )}
             <Input label="Email Address" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <div style={{ flex: 1 }}><Input label="First Name" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required /></div>
-              <div style={{ flex: 1 }}><Input label="Last Name" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required /></div>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 140px', minWidth: 0 }}><Input label="First Name" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required /></div>
+              <div style={{ flex: '1 1 140px', minWidth: 0 }}><Input label="Last Name" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required /></div>
             </div>
             <Select label="Role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'employee', label: 'Employee'}, {value: 'team_leader', label: 'Team Leader'}, {value: 'manager', label: 'Manager'}, {value: 'company_admin', label: 'Company Admin'}]} required />
             <Select label="Branch (Optional)" value={formData.branch_id} onChange={e => setFormData({...formData, branch_id: e.target.value})} options={[{value: '', label: 'None'}, ...branchOptions]} />
@@ -242,9 +242,9 @@ export function Users() {
               {updateUser.error.message}
             </div>
           )}
-          <div style={{ display: 'flex', gap: '16px' }}>
-            <div style={{ flex: 1 }}><Input label="First Name" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required /></div>
-            <div style={{ flex: 1 }}><Input label="Last Name" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required /></div>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 140px', minWidth: 0 }}><Input label="First Name" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required /></div>
+            <div style={{ flex: '1 1 140px', minWidth: 0 }}><Input label="Last Name" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required /></div>
           </div>
           <Select label="Role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} options={[{value: 'employee', label: 'Employee'}, {value: 'team_leader', label: 'Team Leader'}, {value: 'manager', label: 'Manager'}, {value: 'company_admin', label: 'Company Admin'}]} required />
           <Select label="Branch (Optional)" value={formData.branch_id} onChange={e => setFormData({...formData, branch_id: e.target.value})} options={[{value: '', label: 'None'}, ...branchOptions]} />
