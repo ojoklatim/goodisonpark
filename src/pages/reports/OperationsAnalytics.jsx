@@ -43,7 +43,7 @@ export function OperationsAnalytics() {
     queryKey: ['tasks-ops', company?.id],
     enabled: !!company?.id,
     queryFn: async () => {
-      const { data } = await insforge.from('tasks').select('id, status, priority, department_id, due_date, completed_at, created_at').eq('company_id', company.id)
+      const { data } = await insforge.from('tasks').select('id, status, priority, project_id, due_date, completed_at, created_at').eq('company_id', company.id)
       return data || []
     }
   })
@@ -61,7 +61,7 @@ export function OperationsAnalytics() {
     queryKey: ['profiles-ops', company?.id],
     enabled: !!company?.id,
     queryFn: async () => {
-      const { data } = await insforge.from('profiles').select('id, department_id').eq('company_id', company.id)
+      const { data } = await insforge.from('profiles').select('id, department').eq('company_id', company.id)
       return data || []
     }
   })
@@ -78,7 +78,7 @@ export function OperationsAnalytics() {
   // Task Completion Rate Over Time (12 months)
   const taskCompletionOverTime = MONTHS.map((month, idx) => {
     const monthTasks = tasks.filter(t => new Date(t.created_at).getMonth() === idx)
-    const done = monthTasks.filter(t => t.status === 'done' || t.status === 'completed').length
+    const done = monthTasks.filter(t => t.status === 'done').length
     const rate = monthTasks.length ? ((done / monthTasks.length) * 100).toFixed(1) : 0
     return { month, rate: parseFloat(rate), total: monthTasks.length }
   })
@@ -91,13 +91,13 @@ export function OperationsAnalytics() {
 
   // Summary stats
   const activeProjects = projects.filter(p => p.status === 'active' || p.status === 'in_progress').length
-  const openTasks = tasks.filter(t => t.status !== 'done' && t.status !== 'completed').length
+  const openTasks = tasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').length
   const overdueTasks = tasks.filter(t => {
     const due = t.due_date ? new Date(t.due_date) : null
-    return due && due < now && t.status !== 'done' && t.status !== 'completed'
+    return due && due < now && t.status !== 'done' && t.status !== 'cancelled'
   }).length
 
-  const completedWithDates = tasks.filter(t => (t.status === 'done' || t.status === 'completed') && t.completed_at && t.created_at)
+  const completedWithDates = tasks.filter(t => t.status === 'done' && t.completed_at && t.created_at)
   const avgCompletion = completedWithDates.length
     ? (completedWithDates.reduce((sum, t) => {
         const diff = new Date(t.completed_at) - new Date(t.created_at)
@@ -108,14 +108,15 @@ export function OperationsAnalytics() {
   // Department Workload Table
   const deptWorkload = departments.map(d => {
     const deptProjects = projects.filter(p => p.department_id === d.id)
+    const deptProjectIds = deptProjects.map(p => p.id)
     const activeProj = deptProjects.filter(p => p.status === 'active' || p.status === 'in_progress').length
-    const deptTasks = tasks.filter(t => t.department_id === d.id)
-    const openT = deptTasks.filter(t => t.status !== 'done' && t.status !== 'completed').length
+    const deptTasks = tasks.filter(t => deptProjectIds.includes(t.project_id))
+    const openT = deptTasks.filter(t => t.status !== 'done' && t.status !== 'cancelled').length
     const overdueT = deptTasks.filter(t => {
       const due = t.due_date ? new Date(t.due_date) : null
-      return due && due < now && t.status !== 'done' && t.status !== 'completed'
+      return due && due < now && t.status !== 'done' && t.status !== 'cancelled'
     }).length
-    const teamSize = profiles.filter(p => p.department_id === d.id).length
+    const teamSize = profiles.filter(p => p.department === d.name).length
     const utilization = teamSize > 0 ? Math.min(Math.round((openT / (teamSize * 3)) * 100), 120) : 0
     return { dept: d.name, activeProjects: activeProj, openTasks: openT, overdueTasks: overdueT, teamSize, utilization }
   })

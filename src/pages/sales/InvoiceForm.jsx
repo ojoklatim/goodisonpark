@@ -28,6 +28,7 @@ export function InvoiceForm() {
     invoice_number: '',
     client_id: '',
     quotation_id: '',
+    department_id: '',
     status: 'draft',
     due_date: '',
     payment_terms: DEFAULT_TERMS,
@@ -74,6 +75,7 @@ export function InvoiceForm() {
         invoice_number: invoice.invoice_number || '',
         client_id: invoice.client_id || '',
         quotation_id: invoice.quotation_id || '',
+        department_id: invoice.department_id || '',
         status: invoice.status || 'draft',
         due_date: invoice.due_date || '',
         payment_terms: invoice.payment_terms || DEFAULT_TERMS,
@@ -110,6 +112,16 @@ export function InvoiceForm() {
     enabled: !!company?.id
   })
 
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments', company?.id],
+    queryFn: async () => {
+      const { data, error } = await insforge.from('departments').select('id, name').eq('company_id', company?.id)
+      if (error) throw error
+      return data
+    },
+    enabled: !!company?.id
+  })
+
   const selectedClient = clients.find(c => c.id === formData.client_id)
 
   const handleAddItem = () => {
@@ -140,6 +152,7 @@ export function InvoiceForm() {
         invoice_number: formData.invoice_number,
         client_id: formData.client_id || null,
         quotation_id: formData.quotation_id || null,
+        department_id: formData.department_id || null,
         status: statusOverride || formData.status,
         due_date: formData.due_date || null,
         payment_terms: formData.payment_terms,
@@ -226,6 +239,10 @@ export function InvoiceForm() {
         </div>
         <div style={{ flex: '1 1 160px' }}>
           <Input label="Due Date" type="date" value={formData.due_date} onChange={e => setFormData({ ...formData, due_date: e.target.value })} />
+        </div>
+        <div style={{ flex: '1 1 200px' }}>
+          <Select label="Department (optional)" value={formData.department_id} onChange={e => setFormData({ ...formData, department_id: e.target.value })}
+            options={[{ value: '', label: 'Unassigned' }, ...departments.map(d => ({ value: d.id, label: d.name }))]} />
         </div>
         <div style={{ flex: '1 1 160px' }}>
           <Select label="Status" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}

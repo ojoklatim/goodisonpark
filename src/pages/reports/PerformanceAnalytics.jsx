@@ -29,6 +29,15 @@ export function PerformanceAnalytics() {
   const [leaderPeriod, setLeaderPeriod] = useState('Monthly')
   const [selectedEmployees, setSelectedEmployees] = useState([])
 
+  // Returns the earliest timestamp to include for a given period tab, computed
+  // from the real current date (not a fixed/fake cutoff).
+  const periodStart = (label) => {
+    const now = new Date()
+    if (label === 'Monthly') return new Date(now.getFullYear(), now.getMonth(), 1)
+    if (label === 'Quarterly') return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1)
+    return new Date(now.getFullYear(), 0, 1) // Yearly
+  }
+
   const { data: departments = [] } = useQuery({
     queryKey: ['departments', company?.id],
     enabled: !!company?.id,
@@ -42,8 +51,8 @@ export function PerformanceAnalytics() {
     queryKey: ['profiles-perf', company?.id],
     enabled: !!company?.id,
     queryFn: async () => {
-      const { data } = await insforge.from('profiles').select('id, full_name, department_id').eq('company_id', company.id)
-      return data || []
+      const { data } = await insforge.from('profiles').select('id, first_name, last_name, department').eq('company_id', company.id)
+      return (data || []).map(p => ({ ...p, full_name: `${p.first_name} ${p.last_name}` }))
     }
   })
 
@@ -51,7 +60,7 @@ export function PerformanceAnalytics() {
     queryKey: ['performance-reviews', company?.id],
     enabled: !!company?.id,
     queryFn: async () => {
-      const { data } = await insforge.from('performance_reviews').select('id, employee_id, score, review_month, department_id').eq('company_id', company.id)
+      const { data } = await insforge.from('performance_reviews').select('id, profile_id, overall_score, period, created_at').eq('company_id', company.id)
       return data || []
     }
   })
@@ -60,7 +69,7 @@ export function PerformanceAnalytics() {
     queryKey: ['attendance', company?.id],
     enabled: !!company?.id,
     queryFn: async () => {
-      const { data } = await insforge.from('attendance').select('id, employee_id, department_id, status, date').eq('company_id', company.id)
+      const { data } = await insforge.from('attendance').select('id, profile_id, status, date').eq('company_id', company.id)
       return data || []
     }
   })
@@ -69,7 +78,7 @@ export function PerformanceAnalytics() {
     queryKey: ['tasks-perf', company?.id],
     enabled: !!company?.id,
     queryFn: async () => {
-      const { data } = await insforge.from('tasks').select('id, assignee_id, status, department_id').eq('company_id', company.id)
+      const { data } = await insforge.from('tasks').select('id, assigned_to, status, completed_at, created_at').eq('company_id', company.id)
       return data || []
     }
   })
@@ -78,60 +87,83 @@ export function PerformanceAnalytics() {
     queryKey: ['rewards', company?.id],
     enabled: !!company?.id,
     queryFn: async () => {
-      const { data } = await insforge.from('rewards').select('id, type, amount, awarded_month').eq('company_id', company.id)
+      const { data } = await insforge.from('rewards_penalties').select('id, profile_id, type, amount, points, created_at').eq('company_id', company.id)
       return data || []
     }
   })
 
-  const isLoading = revLoading || attLoading || tasksLoading || rewardsLoading
+  const { data: goals = [], isLoading: goalsLoading } = useQuery({
+    queryKey: ['goals-perf', company?.id],
+    enabled: !!company?.id,
+    queryFn: async () => {
+      const { data } = await insforge.from('goals').select('id, profile_id, status').eq('company_id', company.id)
+      return data || []
+    }
+  })
 
-  // Dept KPI Scores
+  const isLoading = revLoading || attLoading || tasksLoading || rewardsLoading || goalsLoading
+
+  // Departments are matched to people by profiles.department (free-text), since
+  // that's how department is actually stored on the profile — there's no
+  // department_id foreign key on reviews/attendance/tasks/profiles.
+  const profilesInDept = (deptName) => profiles.filter(p => p.department === deptName)
+
+  const withinPeriod = (dateStr, label) => {
+    if (!dateStr) return false
+    return new Date(dateStr) >= periodStart(label)
+  }
+
+  // Dept KPI Scores — average overall_score of reviews for employees in that dept
   const deptKpiData = departments.map(d => {
-    const deptReviews = reviews.filter(r => r.department_id === d.id)
-    const avg = deptReviews.length ? (deptReviews.reduce((s, r) => s + (r.score || 0), 0) / deptReviews.length).toFixed(1) : 0
+    const deptProfileIds = profilesInDept(d.name).map(p => p.id)
+    const deptReviews = reviews.filter(r => deptProfileIds.includes(r.profile_id) && withinPeriod(r.created_at, period))
+    const avg = deptReviews.length ? (deptReviews.reduce((s, r) => s + (Number(r.overall_score) || 0), 0) / deptReviews.length).toFixed(1) : 0
     return { dept: d.name, score: parseFloat(avg) }
   })
 
   // Attendance Rate by Dept
   const deptAttData = departments.map(d => {
-    const deptAtt = attendance.filter(a => a.department_id === d.id)
-    const present = deptAtt.filter(a => a.status === 'present').length
+    const deptProfileIds = profilesInDept(d.name).map(p => p.id)
+    const deptAtt = attendance.filter(a => deptProfileIds.includes(a.profile_id) && withinPeriod(a.date, period))
+    const present = deptAtt.filter(a => a.status === 'present' || a.status === 'late').length
     const rate = deptAtt.length ? ((present / deptAtt.length) * 100).toFixed(1) : 0
     return { dept: d.name, rate: parseFloat(rate) }
   })
 
   // Task Completion Rate by Dept
   const deptTaskData = departments.map(d => {
-    const deptTasks = tasks.filter(t => t.department_id === d.id)
-    const done = deptTasks.filter(t => t.status === 'done' || t.status === 'completed').length
+    const deptProfileIds = profilesInDept(d.name).map(p => p.id)
+    const deptTasks = tasks.filter(t => deptProfileIds.includes(t.assigned_to) && withinPeriod(t.created_at, period))
+    const done = deptTasks.filter(t => t.status === 'done').length
     const rate = deptTasks.length ? ((done / deptTasks.length) * 100).toFixed(1) : 0
     return { dept: d.name, rate: parseFloat(rate) }
   })
 
-  // Rewards vs Penalties by month
+  // Rewards vs Penalties by month (current year, from real created_at timestamps)
   const rewardsByMonth = MONTHS.map((m, idx) => {
-    const monthRewards = rewards.filter(r => r.awarded_month && new Date(r.awarded_month).getMonth() === idx)
+    const monthRewards = rewards.filter(r => r.created_at && new Date(r.created_at).getMonth() === idx && new Date(r.created_at).getFullYear() === new Date().getFullYear())
     return {
       month: m,
-      rewards: monthRewards.filter(r => r.type === 'reward').reduce((s, r) => s + (r.amount || 0), 0),
-      penalties: monthRewards.filter(r => r.type === 'penalty').reduce((s, r) => s + (r.amount || 0), 0),
+      rewards: monthRewards.filter(r => r.type === 'reward').reduce((s, r) => s + Number(r.amount || 0), 0),
+      penalties: monthRewards.filter(r => r.type === 'penalty').reduce((s, r) => s + Number(r.amount || 0), 0),
     }
   })
 
-  // Leaderboard: compute score per employee
-  const leaderboard = profiles.map(p => {
-    const empReviews = reviews.filter(r => r.employee_id === p.id)
-    const kpi = empReviews.length ? (empReviews.reduce((s, r) => s + (r.score || 0), 0) / empReviews.length).toFixed(1) : 0
-    const empAtt = attendance.filter(a => a.employee_id === p.id)
-    const attRate = empAtt.length ? ((empAtt.filter(a => a.status === 'present').length / empAtt.length) * 100).toFixed(1) : 0
-    const empTasks = tasks.filter(t => t.assignee_id === p.id)
-    const tasksDone = empTasks.filter(t => t.status === 'done' || t.status === 'completed').length
-    const dept = departments.find(d => d.id === p.department_id)
-    const score = ((parseFloat(kpi) * 0.4) + (parseFloat(attRate) * 0.3) + (empTasks.length ? (tasksDone / empTasks.length) * 100 * 0.3 : 0)).toFixed(1)
-    return { id: p.id, name: p.full_name, dept: dept?.name || '—', kpi, attRate, tasksDone, score: parseFloat(score) }
-  }).sort((a, b) => b.score - a.score)
+  // Leaderboard: compute score per employee, optionally scoped to the selected department
+  const leaderboard = profiles
+    .filter(p => !deptFilter || p.department === departments.find(d => d.id === deptFilter)?.name)
+    .map(p => {
+      const empReviews = reviews.filter(r => r.profile_id === p.id && withinPeriod(r.created_at, leaderPeriod))
+      const kpi = empReviews.length ? (empReviews.reduce((s, r) => s + (Number(r.overall_score) || 0), 0) / empReviews.length).toFixed(1) : 0
+      const empAtt = attendance.filter(a => a.profile_id === p.id && withinPeriod(a.date, leaderPeriod))
+      const attRate = empAtt.length ? ((empAtt.filter(a => a.status === 'present' || a.status === 'late').length / empAtt.length) * 100).toFixed(1) : 0
+      const empTasks = tasks.filter(t => t.assigned_to === p.id && withinPeriod(t.created_at, leaderPeriod))
+      const tasksDone = empTasks.filter(t => t.status === 'done').length
+      const score = ((parseFloat(kpi) * 0.4) + (parseFloat(attRate) * 0.3) + (empTasks.length ? (tasksDone / empTasks.length) * 100 * 0.3 : 0)).toFixed(1)
+      return { id: p.id, name: p.full_name, dept: p.department || '—', kpi, attRate, tasksDone, score: parseFloat(score) }
+    }).sort((a, b) => b.score - a.score)
 
-  // Radar comparison data
+  // Radar comparison data — Goals axis uses real completion rate from the goals table
   const radarData = [
     { axis: 'KPI' }, { axis: 'Attendance' }, { axis: 'Tasks' }, { axis: 'Goals' }, { axis: 'Score' }
   ].map(item => {
@@ -142,7 +174,10 @@ export function PerformanceAnalytics() {
         if (item.axis === 'KPI') row[emp.name] = parseFloat(emp.kpi) * 10
         else if (item.axis === 'Attendance') row[emp.name] = parseFloat(emp.attRate)
         else if (item.axis === 'Tasks') row[emp.name] = Math.min(emp.tasksDone * 5, 100)
-        else if (item.axis === 'Goals') row[emp.name] = Math.random() * 100
+        else if (item.axis === 'Goals') {
+          const empGoals = goals.filter(g => g.profile_id === id)
+          row[emp.name] = empGoals.length ? Math.round((empGoals.filter(g => g.status === 'completed').length / empGoals.length) * 100) : 0
+        }
         else if (item.axis === 'Score') row[emp.name] = parseFloat(emp.score)
       }
     })

@@ -231,6 +231,7 @@ CREATE TABLE invoices (
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   quotation_id UUID REFERENCES quotations(id),
   client_id UUID REFERENCES clients(id),
+  department_id UUID REFERENCES departments(id),
   invoice_number TEXT NOT NULL,
   status TEXT DEFAULT 'unpaid' CHECK (status IN ('draft','unpaid','partial','paid','overdue','cancelled')),
   items JSONB DEFAULT '[]',
@@ -432,6 +433,7 @@ CREATE TABLE documents (
   category TEXT,
   is_public_to_company BOOLEAN DEFAULT FALSE,
   tags TEXT[],
+  metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

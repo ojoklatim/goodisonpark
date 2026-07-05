@@ -19,6 +19,8 @@ export function Documents() {
   const [search, setSearch] = useState('')
 
   const [formData, setFormData] = useState({ title: '', description: '', category: 'hr', is_public: true })
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   const { data: documents = [], isLoading } = useQuery({
     queryKey: ['documents', company?.id],
@@ -46,6 +48,7 @@ export function Documents() {
       queryClient.invalidateQueries(['documents', company?.id])
       setShowUploadModal(false)
       setFormData({ title: '', description: '', category: 'hr', is_public: true })
+      setSelectedFile(null)
     }
   })
 
@@ -59,20 +62,33 @@ export function Documents() {
     }
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Stub upload for demonstration since actual Supabase storage bucket is not configured
-    createDoc.mutate({
-      company_id: company.id,
-      uploaded_by: user.id,
-      title: formData.title,
-      description: formData.description,
-      category: formData.category,
-      is_public_to_company: formData.is_public,
-      file_url: 'https://example.com/stub-document.pdf',
-      file_type: 'application/pdf',
-      file_size: Math.floor(Math.random() * 5000000) + 100000 // Random size
-    })
+    if (!selectedFile) return
+    setIsUploading(true)
+    try {
+      const fileExt = selectedFile.name.split('.').pop()
+      const filePath = `${company.id}/${Date.now()}-${selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+      const { error: uploadError } = await insforge.storage.from('documents').upload(filePath, selectedFile)
+      if (uploadError) throw uploadError
+
+      const { data: urlData } = insforge.storage.from('documents').getPublicUrl(filePath)
+
+      await createDoc.mutateAsync({
+        company_id: company.id,
+        uploaded_by: user.id,
+        title: formData.title || selectedFile.name,
+        description: formData.description,
+        category: formData.category,
+        is_public_to_company: formData.is_public,
+        file_url: urlData.publicUrl,
+        file_type: selectedFile.type || fileExt,
+        file_size: selectedFile.size
+      })
+      setSelectedFile(null)
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const handleDelete = (id) => {
@@ -166,10 +182,22 @@ export function Documents() {
 
       <Modal open={showUploadModal} onClose={() => setShowUploadModal(false)} title="Upload Document">
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ border: '2px dashed #D1D5DB', padding: '32px', textAlign: 'center', cursor: 'pointer' }}>
-            <p style={{ color: '#6B7280' }}>Click or drag file here to upload</p>
-            <p style={{ fontSize: '12px', color: '#9CA3AF' }}>(File upload is stubbed for this demo)</p>
-          </div>
+          <label style={{ display: 'block', border: '2px dashed var(--gp-border-light)', padding: '32px', textAlign: 'center', cursor: 'pointer' }}>
+            <input
+              type="file"
+              onChange={e => {
+                const file = e.target.files?.[0] || null
+                setSelectedFile(file)
+                if (file && !formData.title) setFormData(prev => ({ ...prev, title: file.name }))
+              }}
+              style={{ display: 'none' }}
+            />
+            {selectedFile ? (
+              <p style={{ color: 'var(--gp-black)', fontWeight: 500 }}>{selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)</p>
+            ) : (
+              <p style={{ color: 'var(--gp-muted)' }}>Click to choose a file to upload</p>
+            )}
+          </label>
           <Input label="Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required />
           <Input label="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
           <Select 
@@ -189,8 +217,8 @@ export function Documents() {
             Make Public to Company
           </label>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-            <Button type="button" variant="secondary" onClick={() => setShowUploadModal(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={createDoc.isPending}>{createDoc.isPending ? 'Saving...' : 'Save Document'}</Button>
+            <Button type="button" variant="secondary" onClick={() => { setShowUploadModal(false); setSelectedFile(null) }}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={isUploading || !selectedFile}>{isUploading ? 'Uploading...' : 'Save Document'}</Button>
           </div>
         </form>
       </Modal>

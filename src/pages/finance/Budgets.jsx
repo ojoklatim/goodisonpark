@@ -90,7 +90,7 @@ export function Budgets() {
     queryFn: async () => {
       const { data } = await insforge
         .from('expenses')
-        .select('amount, category, department_id, expense_date, status')
+        .select('amount, category, department_id, date, status')
         .eq('company_id', company.id)
       return data || []
     },
@@ -210,14 +210,14 @@ export function Budgets() {
   }, {})
   const categoryData = Object.entries(categoryBreakdown).map(([name, value]) => ({ name, value }))
 
-  // Budget vs Actual – last 6 months (mock fill)
+  // Budget vs Actual – last 6 months, computed from real expense records
   const lineData = LAST_6_MONTHS.map((month, i) => ({
     month,
     Budget: detailBudget?.amount || 0,
     Actual: detailExpenses
       .filter((e) => {
-        if (!e.expense_date) return false
-        const d = new Date(e.expense_date)
+        if (!e.date) return false
+        const d = new Date(e.date)
         const target = new Date()
         target.setMonth(target.getMonth() - (5 - i))
         return d.getMonth() === target.getMonth() && d.getFullYear() === target.getFullYear()
@@ -473,7 +473,7 @@ export function Budgets() {
                       <tbody>
                         {detailExpenses.slice(0, 20).map((e, i) => (
                           <tr key={i} style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
-                            <td style={{ padding: '10px 14px' }}>{e.expense_date || '—'}</td>
+                            <td style={{ padding: '10px 14px' }}>{e.date || '—'}</td>
                             <td style={{ padding: '10px 14px', color: '#9CA3AF' }}>{e.category || '—'}</td>
                             <td style={{ padding: '10px 14px' }}>{fmt(e.amount)}</td>
                             <td style={{ padding: '10px 14px' }}>

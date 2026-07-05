@@ -10,6 +10,15 @@ import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Spinner } from '../../components/ui/Spinner'
 
+function currentQuarterLabel(offset = 0) {
+  const now = new Date()
+  let quarter = Math.floor(now.getMonth() / 3) + 1
+  let year = now.getFullYear()
+  quarter -= offset
+  while (quarter < 1) { quarter += 4; year -= 1 }
+  return `Q${quarter} ${year}`
+}
+
 export function Review() {
   const { id } = useParams() // Review ID if editing/viewing
   const [searchParams] = useSearchParams()
@@ -20,6 +29,7 @@ export function Review() {
   
   const [status, setStatus] = useState('draft')
   const [selectedEmp, setSelectedEmp] = useState(defaultEmpId)
+  const [period, setPeriod] = useState(currentQuarterLabel())
   
   const [kpiScores, setKpiScores] = useState({})
   const [compScores, setCompScores] = useState({})
@@ -76,7 +86,7 @@ export function Review() {
         company_id: company.id,
         profile_id: selectedEmp,
         reviewer_id: user.id,
-        period: 'Q2 2026', // Mock period
+        period,
         overall_score: finalScore,
         strengths: comments.strengths,
         areas_for_improvement: comments.areas,
@@ -102,16 +112,26 @@ export function Review() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', marginTop: '32px' }}>
         
         {/* Employee Selection */}
-        <div style={{ background: '#F9FAFB', padding: '24px', border: "1px solid var(--gp-border-light)" }}>
-          <Select 
-            label="Select Employee to Review"
-            value={selectedEmp}
-            onChange={e => setSelectedEmp(e.target.value)}
-            options={[
-              { value: '', label: '-- Select Employee --' },
-              ...employees.map(e => ({ value: e.id, label: `${e.first_name} ${e.last_name}` }))
-            ]}
-          />
+        <div style={{ background: 'var(--gp-card)', padding: '24px', border: "1px solid var(--gp-border-light)", display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 260px' }}>
+            <Select 
+              label="Select Employee to Review"
+              value={selectedEmp}
+              onChange={e => setSelectedEmp(e.target.value)}
+              options={[
+                { value: '', label: '-- Select Employee --' },
+                ...employees.map(e => ({ value: e.id, label: `${e.first_name} ${e.last_name}` }))
+              ]}
+            />
+          </div>
+          <div style={{ flex: '1 1 180px' }}>
+            <Select
+              label="Review Period"
+              value={period}
+              onChange={e => setPeriod(e.target.value)}
+              options={[0, 1, 2, 3].map(offset => ({ value: currentQuarterLabel(offset), label: currentQuarterLabel(offset) }))}
+            />
+          </div>
         </div>
 
         {selectedEmp && (

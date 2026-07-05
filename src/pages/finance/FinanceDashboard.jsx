@@ -70,7 +70,7 @@ export function FinanceDashboard() {
     queryFn: async () => {
       const { data } = await insforge
         .from('invoices')
-        .select('id, total, amount_paid, status, due_date, issue_date, department_id')
+        .select('id, total, amount_paid, status, due_date, created_at, department_id')
         .eq('company_id', company.id)
       return data || []
     },
@@ -82,7 +82,7 @@ export function FinanceDashboard() {
     queryFn: async () => {
       const { data } = await insforge
         .from('expenses')
-        .select('amount, category, status, expense_date, department_id')
+        .select('amount, category, status, date, department_id')
         .eq('company_id', company.id)
       return data || []
     },
@@ -92,11 +92,11 @@ export function FinanceDashboard() {
 
   // --- Stat Cards ---
   const revenueMTD = invoices
-    .filter((i) => i.status === 'paid' && inCurrentMonth(i.issue_date))
+    .filter((i) => i.status === 'paid' && inCurrentMonth(i.created_at))
     .reduce((s, i) => s + (i.total || 0), 0)
 
   const expensesMTD = expenses
-    .filter((e) => ['approved', 'paid'].includes(e.status) && inCurrentMonth(e.expense_date))
+    .filter((e) => ['approved', 'paid'].includes(e.status) && inCurrentMonth(e.date))
     .reduce((s, e) => s + (e.amount || 0), 0)
 
   const netMTD = revenueMTD - expensesMTD
@@ -118,16 +118,16 @@ export function FinanceDashboard() {
   const barData = LAST_6.map(({ label, year, month }) => {
     const rev = invoices
       .filter((i) => {
-        if (i.status !== 'paid' || !i.issue_date) return false
-        const d = new Date(i.issue_date)
+        if (i.status !== 'paid' || !i.created_at) return false
+        const d = new Date(i.created_at)
         return d.getMonth() === month && d.getFullYear() === year
       })
       .reduce((s, i) => s + (i.total || 0), 0)
 
     const exp = expenses
       .filter((e) => {
-        if (!['approved', 'paid'].includes(e.status) || !e.expense_date) return false
-        const d = new Date(e.expense_date)
+        if (!['approved', 'paid'].includes(e.status) || !e.date) return false
+        const d = new Date(e.date)
         return d.getMonth() === month && d.getFullYear() === year
       })
       .reduce((s, e) => s + (e.amount || 0), 0)
@@ -165,16 +165,16 @@ export function FinanceDashboard() {
   const plRows = LAST_6.map(({ label, year, month }) => {
     const rev = invoices
       .filter((i) => {
-        if (i.status !== 'paid' || !i.issue_date) return false
-        const d = new Date(i.issue_date)
+        if (i.status !== 'paid' || !i.created_at) return false
+        const d = new Date(i.created_at)
         return d.getMonth() === month && d.getFullYear() === year
       })
       .reduce((s, i) => s + (i.total || 0), 0)
 
     const exp = expenses
       .filter((e) => {
-        if (!['approved', 'paid'].includes(e.status) || !e.expense_date) return false
-        const d = new Date(e.expense_date)
+        if (!['approved', 'paid'].includes(e.status) || !e.date) return false
+        const d = new Date(e.date)
         return d.getMonth() === month && d.getFullYear() === year
       })
       .reduce((s, e) => s + (e.amount || 0), 0)

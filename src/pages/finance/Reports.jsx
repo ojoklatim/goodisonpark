@@ -84,7 +84,7 @@ export function Reports() {
     queryFn: async () => {
       const { data } = await insforge
         .from('invoices')
-        .select('id, total, amount_paid, status, department_id, client_id, due_date, issue_date, clients(name)')
+        .select('id, total, amount_paid, status, department_id, client_id, due_date, created_at, clients(name)')
         .eq('company_id', company.id)
       return data || []
     },
@@ -96,7 +96,7 @@ export function Reports() {
     queryFn: async () => {
       const { data } = await insforge
         .from('expenses')
-        .select('amount, category, department_id, status, expense_date')
+        .select('amount, category, department_id, status, date')
         .eq('company_id', company.id)
       return data || []
     },
@@ -120,13 +120,13 @@ export function Reports() {
 
   const filteredInvoices = invoices.filter(
     (inv) =>
-      inRange(inv.issue_date) &&
+      inRange(inv.created_at) &&
       (!deptFilter || inv.department_id === deptFilter)
   )
 
   const filteredExpenses = expenses.filter(
     (e) =>
-      inRange(e.expense_date) &&
+      inRange(e.date) &&
       (!deptFilter || e.department_id === deptFilter)
   )
 
@@ -139,7 +139,7 @@ export function Reports() {
     .filter((i) => ['unpaid', 'partial'].includes(i.status))
     .reduce((s, i) => s + ((i.total || 0) - (i.amount_paid || 0)), 0)
   const writeOffs = filteredInvoices
-    .filter((i) => i.status === 'void')
+    .filter((i) => i.status === 'cancelled')
     .reduce((s, i) => s + (i.total || 0), 0)
 
   // Expense stats

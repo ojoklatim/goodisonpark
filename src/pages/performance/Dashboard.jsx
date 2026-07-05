@@ -66,7 +66,33 @@ export function Dashboard() {
     enabled: !!company?.id
   })
 
-  const isLoading = loadingProfiles || loadingKpis || loadingGoals || loadingReviews
+  const { data: tasks = [], isLoading: loadingTasks } = useQuery({
+    queryKey: ['tasks', company?.id],
+    queryFn: async () => {
+      const { data, error } = await insforge
+        .from('tasks')
+        .select('assigned_to, status')
+        .eq('company_id', company?.id)
+      if (error) throw error
+      return data
+    },
+    enabled: !!company?.id
+  })
+
+  const { data: rewardsPenalties = [], isLoading: loadingRewards } = useQuery({
+    queryKey: ['rewards_penalties', company?.id],
+    queryFn: async () => {
+      const { data, error } = await insforge
+        .from('rewards_penalties')
+        .select('profile_id, type, points')
+        .eq('company_id', company?.id)
+      if (error) throw error
+      return data
+    },
+    enabled: !!company?.id
+  })
+
+  const isLoading = loadingProfiles || loadingKpis || loadingGoals || loadingReviews || loadingTasks || loadingRewards
 
   const stats = useMemo(() => {
     let totalScore = 0
@@ -105,8 +131,10 @@ export function Dashboard() {
         employee: `${p.first_name} ${p.last_name}`,
         department: p.department || 'Unassigned',
         kpiScore: score,
-        tasks: 0, // Mock tasks for now, requires fetching tasks
-        points: 0 // Mock points
+        tasks: tasks.filter(t => t.assigned_to === p.id && t.status === 'done').length,
+        points: rewardsPenalties
+          .filter(rp => rp.profile_id === p.id)
+          .reduce((sum, rp) => sum + (rp.type === 'penalty' ? -Number(rp.points || 0) : Number(rp.points || 0)), 0)
       })
     })
 
@@ -137,17 +165,31 @@ export function Dashboard() {
       leaderboard,
       deptData
     }
-  }, [profiles, kpis, goals, reviews])
+  }, [profiles, kpis, goals, reviews, tasks, rewardsPenalties])
 
-  // Mock trend data as historic data requires snapshots
-  const trendData = [
-    { name: 'Jan', rate: 75 },
-    { name: 'Feb', rate: 78 },
-    { name: 'Mar', rate: 82 },
-    { name: 'Apr', rate: 80 },
-    { name: 'May', rate: 85 },
-    { name: 'Jun', rate: stats.avgKpi > 0 ? stats.avgKpi : 88 },
-  ]
+  // Real KPI trend, computed from actual performance review scores over the last 6 months.
+  // Months with no submitted reviews are left as null so the chart shows a genuine gap
+  // rather than a fabricated number.
+  const trendData = useMemo(() => {
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date()
+      d.setMonth(d.getMonth() - (5 - i))
+      return { key: `${d.getFullYear()}-${d.getMonth()}`, name: d.toLocaleString('default', { month: 'short' }) }
+    })
+    return months.map(({ key, name }) => {
+      const [year, month] = key.split('-').map(Number)
+      const monthReviews = reviews.filter(r => {
+        if (!r.created_at || r.overall_score == null) return false
+        const d = new Date(r.created_at)
+        return d.getFullYear() === year && d.getMonth() === month
+      })
+      const rate = monthReviews.length
+        ? Math.round((monthReviews.reduce((s, r) => s + Number(r.overall_score), 0) / monthReviews.length) * 20) // scale 0-5 score to 0-100
+        : null
+      return { name, rate }
+    })
+  }, [reviews])
+  const hasTrendData = trendData.some(t => t.rate !== null)
 
   const columns = [
     { header: 'Rank', accessorKey: 'rank', cell: info => <span style={{ fontWeight: 700 }}>#{info.getValue()}</span> },
@@ -209,15 +251,21 @@ export function Dashboard() {
             <Card>
               <div style={{ padding: '16px', borderBottom: "1px solid var(--gp-border-light)", fontWeight: 600 }}>KPI Achievement Trend</div>
               <div style={{ padding: '24px', height: '250px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--gp-border-light)" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
-                    <RechartsTooltip />
-                    <Line type="monotone" dataKey="rate" stroke="#22C55E" strokeWidth={3} dot={{ r: 4, fill: '#22C55E' }} />
-                  </LineChart>
-                </ResponsiveContainer>
+                {hasTrendData ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trendData}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--gp-border-light)" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
+                      <RechartsTooltip />
+                      <Line type="monotone" dataKey="rate" stroke="#22C55E" strokeWidth={3} dot={{ r: 4, fill: '#22C55E' }} connectNulls />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--gp-muted)', fontSize: '13px', textAlign: 'center' }}>
+                    No submitted performance reviews yet — the trend will appear here once reviews are recorded.
+                  </div>
+                )}
               </div>
             </Card>
           </div>

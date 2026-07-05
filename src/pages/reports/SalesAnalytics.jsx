@@ -17,7 +17,14 @@ import { Download, Printer, TrendingUp, Users, DollarSign, Clock } from 'lucide-
 const CHART_COLORS = ["var(--gp-blue)", '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899']
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-const DEAL_STAGES = ['New','Contacted','Qualified','Proposal','Negotiation','Won','Lost']
+const DEAL_STAGES = [
+  { value: 'new_lead', label: 'New Lead' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'negotiation', label: 'Negotiation' },
+  { value: 'proposal', label: 'Proposal' },
+  { value: 'closed_won', label: 'Won' },
+  { value: 'closed_lost', label: 'Lost' },
+]
 
 function getDateRange(preset) {
   const now = new Date()
@@ -56,7 +63,7 @@ export function SalesAnalytics() {
     queryFn: async () => {
       const { data } = await insforge
         .from('invoices')
-        .select('id, amount, created_at, status')
+        .select('id, total, client_id, created_at, status')
         .eq('company_id', company.id)
         .gte('created_at', dateRange.start)
         .lte('created_at', dateRange.end)
@@ -70,7 +77,7 @@ export function SalesAnalytics() {
     queryFn: async () => {
       const { data } = await insforge
         .from('deals')
-        .select('id, stage, value, agent_id, created_at, closed_at')
+        .select('id, stage, value, assigned_to, created_at, actual_close_date')
         .eq('company_id', company.id)
         .gte('created_at', dateRange.start)
         .lte('created_at', dateRange.end)
@@ -84,7 +91,7 @@ export function SalesAnalytics() {
     queryFn: async () => {
       const { data } = await insforge
         .from('leads')
-        .select('id, source, agent_id, status, created_at')
+        .select('id, source, assigned_to, status, created_at')
         .eq('company_id', company.id)
         .gte('created_at', dateRange.start)
         .lte('created_at', dateRange.end)
@@ -105,7 +112,30 @@ export function SalesAnalytics() {
     queryKey: ['profiles-sales', company?.id],
     enabled: !!company?.id,
     queryFn: async () => {
-      const { data } = await insforge.from('profiles').select('id, full_name, department_id').eq('company_id', company.id)
+      const { data } = await insforge.from('profiles').select('id, first_name, last_name, department').eq('company_id', company.id)
+      return (data || []).map(p => ({ ...p, full_name: `${p.first_name} ${p.last_name}` }))
+    }
+  })
+
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients-sales', company?.id],
+    enabled: !!company?.id,
+    queryFn: async () => {
+      const { data } = await insforge.from('clients').select('id, name, company_name').eq('company_id', company.id)
+      return data || []
+    }
+  })
+
+  const { data: commissions = [] } = useQuery({
+    queryKey: ['commissions-sales', company?.id, dateRange],
+    enabled: !!company?.id,
+    queryFn: async () => {
+      const { data } = await insforge
+        .from('commissions')
+        .select('id, deal_id, profile_id, amount, created_at')
+        .eq('company_id', company.id)
+        .gte('created_at', dateRange.start)
+        .lte('created_at', dateRange.end)
       return data || []
     }
   })
@@ -114,14 +144,14 @@ export function SalesAnalytics() {
   const monthlyRevenue = MONTHS.map((month, idx) => {
     const total = invoices
       .filter(inv => new Date(inv.created_at).getMonth() === idx && inv.status === 'paid')
-      .reduce((sum, inv) => sum + (inv.amount || 0), 0)
+      .reduce((sum, inv) => sum + Number(inv.total || 0), 0)
     return { month, revenue: total }
   })
 
   // Deal Stage Funnel
-  const stageFunnel = DEAL_STAGES.map(stage => ({
-    stage,
-    count: deals.filter(d => d.stage === stage).length
+  const stageFunnel = DEAL_STAGES.map(({ value, label }) => ({
+    stage: label,
+    count: deals.filter(d => d.stage === value).length
   }))
 
   // Lead Source PieChart
@@ -132,18 +162,20 @@ export function SalesAnalytics() {
   })
   const leadSourceData = Object.entries(sourceMap).map(([name, value]) => ({ name, value }))
 
-  // Agent Performance
+  // Agent Performance — commission comes from real commissions table rows, not a flat assumed rate
   const agentMap = {}
-  profiles.forEach(p => { agentMap[p.id] = { name: p.full_name, leads: 0, won: 0, revenue: 0, commission: 0 } })
-  leads.forEach(l => { if (agentMap[l.agent_id]) agentMap[l.agent_id].leads++ })
+  profiles
+    .filter(p => !deptFilter || p.department === departments.find(d => d.id === deptFilter)?.name)
+    .forEach(p => { agentMap[p.id] = { name: p.full_name, leads: 0, won: 0, revenue: 0, commission: 0 } })
+  leads.forEach(l => { if (agentMap[l.assigned_to]) agentMap[l.assigned_to].leads++ })
   deals.forEach(d => {
-    if (agentMap[d.agent_id]) {
-      if (d.stage === 'Won') {
-        agentMap[d.agent_id].won++
-        agentMap[d.agent_id].revenue += d.value || 0
-        agentMap[d.agent_id].commission += (d.value || 0) * 0.03
-      }
+    if (agentMap[d.assigned_to] && d.stage === 'closed_won') {
+      agentMap[d.assigned_to].won++
+      agentMap[d.assigned_to].revenue += Number(d.value || 0)
     }
+  })
+  commissions.forEach(c => {
+    if (agentMap[c.profile_id]) agentMap[c.profile_id].commission += Number(c.amount || 0)
   })
   const agentRows = Object.values(agentMap).filter(a => a.leads > 0).map(a => ({
     ...a,
@@ -151,20 +183,22 @@ export function SalesAnalytics() {
   }))
 
   // Avg Deal Cycle Time
-  const closedDeals = deals.filter(d => d.stage === 'Won' && d.closed_at && d.created_at)
+  const closedDeals = deals.filter(d => d.stage === 'closed_won' && d.actual_close_date && d.created_at)
   const avgCycleDays = closedDeals.length
     ? (closedDeals.reduce((sum, d) => {
-        const diff = new Date(d.closed_at) - new Date(d.created_at)
+        const diff = new Date(d.actual_close_date) - new Date(d.created_at)
         return sum + diff / (1000 * 60 * 60 * 24)
       }, 0) / closedDeals.length).toFixed(1)
     : 0
 
-  // Top Clients
+  // Top Clients — resolved to real client names, not raw client_id
   const clientMap = {}
   invoices.filter(i => i.status === 'paid').forEach(inv => {
-    const key = inv.client_id || inv.client_name || 'Unknown'
-    if (!clientMap[key]) clientMap[key] = { client: key, revenue: 0, deals: 0 }
-    clientMap[key].revenue += inv.amount || 0
+    const clientRecord = clients.find(c => c.id === inv.client_id)
+    const key = inv.client_id || 'unknown'
+    const label = clientRecord ? (clientRecord.company_name || clientRecord.name) : 'Unknown Client'
+    if (!clientMap[key]) clientMap[key] = { client: label, revenue: 0, deals: 0 }
+    clientMap[key].revenue += Number(inv.total || 0)
     clientMap[key].deals++
   })
   const topClients = Object.values(clientMap).sort((a, b) => b.revenue - a.revenue).slice(0, 10)
@@ -194,15 +228,15 @@ export function SalesAnalytics() {
     { key: 'name', label: 'Agent' },
     { key: 'leads', label: 'Leads' },
     { key: 'won', label: 'Deals Won' },
-    { key: 'revenue', label: 'Revenue', render: v => `£${(v||0).toLocaleString()}` },
-    { key: 'commission', label: 'Commission', render: v => `£${(v||0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+    { key: 'revenue', label: 'Revenue (UGX)', render: v => `UGX ${(v||0).toLocaleString()}` },
+    { key: 'commission', label: 'Commission (UGX)', render: v => `UGX ${(v||0).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
     { key: 'convRate', label: 'Conv. Rate %', render: v => `${v}%` },
   ]
 
   const clientColumns = [
     { key: '_rank', label: 'Rank', render: (_, __, idx) => `#${idx + 1}` },
     { key: 'client', label: 'Client' },
-    { key: 'revenue', label: 'Revenue', render: v => `£${(v||0).toLocaleString()}` },
+    { key: 'revenue', label: 'Revenue (UGX)', render: v => `UGX ${(v||0).toLocaleString()}` },
     { key: 'deals', label: 'Deals' },
   ]
 
@@ -265,7 +299,7 @@ export function SalesAnalytics() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
             <StatCard
               title="Total Revenue"
-              value={`£${invoices.filter(i => i.status === 'paid').reduce((s, i) => s + (i.amount || 0), 0).toLocaleString()}`}
+              value={`UGX ${invoices.filter(i => i.status === 'paid').reduce((s, i) => s + Number(i.total || 0), 0).toLocaleString()}`}
               icon={<DollarSign size={20} color="var(--gp-blue)" />}
             />
             <StatCard
@@ -294,9 +328,9 @@ export function SalesAnalytics() {
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={monthlyRevenue}>
                   <XAxis dataKey="month" tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `£${(v/1000).toFixed(0)}k`} />
+                  <YAxis tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
                   <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }}
-                    formatter={v => [`£${v.toLocaleString()}`, 'Revenue']} />
+                    formatter={v => [`UGX ${v.toLocaleString()}`, 'Revenue']} />
                   <Bar dataKey="revenue" fill="var(--gp-blue)" radius={0} />
                 </BarChart>
               </ResponsiveContainer>
