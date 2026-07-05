@@ -11,7 +11,7 @@ export function StatCard({ label, title, value, prefix, suffix, trend, trendLabe
     return (
       <div style={{
         background: "var(--gp-card)",
-        border: '1px solid #2A2A2A',
+        border: '1px solid var(--gp-border-light)',
         padding: '20px',
         display: 'flex',
         flexDirection: 'column',
@@ -36,7 +36,7 @@ export function StatCard({ label, title, value, prefix, suffix, trend, trendLabe
   return (
     <div style={{
       background: "var(--gp-card)",
-      border: '1px solid #2A2A2A',
+      border: '1px solid var(--gp-border-light)',
       padding: '20px',
       display: 'flex',
       flexDirection: 'column',

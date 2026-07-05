@@ -321,9 +321,9 @@ export function Budgets() {
   ]
 
   const tooltipStyle = {
-    contentStyle: { background: "var(--gp-card)", border: '1px solid #2A2A2A', borderRadius: 0 },
+    contentStyle: { background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', borderRadius: 0 },
     labelStyle: { color: '#9CA3AF' },
-    itemStyle: { color: '#fff' },
+    itemStyle: { color: 'var(--gp-black)' },
   }
 
   return (
@@ -336,7 +336,7 @@ export function Budgets() {
               onClick={exportCSV}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
-                background: "var(--gp-card)", border: '1px solid #2A2A2A', borderRadius: 0,
+                background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', borderRadius: 0,
                 color: '#9CA3AF', cursor: 'pointer', fontSize: 13,
               }}
             >
@@ -362,7 +362,7 @@ export function Budgets() {
         </div>
       ) : (
         <>
-          <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', borderRadius: 0, marginTop: 24 }}>
+          <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', borderRadius: 0, marginTop: 24 }}>
             <DataTable
               columns={columns}
               data={budgets}
@@ -374,7 +374,7 @@ export function Budgets() {
           {detailBudget && (
             <div
               style={{
-                background: "var(--gp-dark)", border: '1px solid #2A2A2A', borderRadius: 0,
+                background: "var(--gp-dark)", border: '1px solid var(--gp-border-light)', borderRadius: 0,
                 marginTop: 16, padding: 24,
               }}
             >
@@ -402,7 +402,7 @@ export function Budgets() {
                   <div style={{ marginBottom: 24 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
                       <span style={{ color: '#9CA3AF', fontSize: 13 }}>
-                        Spent: <strong style={{ color: '#fff' }}>{fmt(spent)}</strong> of {fmt(detailBudget.amount)}
+                        Spent: <strong style={{ color: 'var(--gp-black)' }}>{fmt(spent)}</strong> of {fmt(detailBudget.amount)}
                       </span>
                       <span style={{ color, fontWeight: 700, fontSize: 13 }}>{pct.toFixed(1)}% Used</span>
                     </div>
@@ -419,7 +419,7 @@ export function Budgets() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
                 {/* Category Horizontal BarChart */}
-                <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: 16 }}>
+                <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: 16 }}>
                   <h4 style={{ margin: '0 0 16px', fontSize: 14, color: '#9CA3AF', fontWeight: 600 }}>Expenses by Category</h4>
                   {categoryData.length === 0 ? (
                     <p style={{ color: '#4B5563', fontSize: 13 }}>No expense data</p>
@@ -440,7 +440,7 @@ export function Budgets() {
                 </div>
 
                 {/* Budget vs Actual LineChart */}
-                <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: 16 }}>
+                <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: 16 }}>
                   <h4 style={{ margin: '0 0 16px', fontSize: 14, color: '#9CA3AF', fontWeight: 600 }}>Budget vs Actual (6 Months)</h4>
                   <ResponsiveContainer width="100%" height={200}>
                     <LineChart data={lineData} margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
@@ -461,10 +461,10 @@ export function Budgets() {
                 {detailExpenses.length === 0 ? (
                   <p style={{ color: '#4B5563', fontSize: 13 }}>No related expenses found.</p>
                 ) : (
-                  <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', overflow: 'auto' }}>
+                  <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', overflow: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                       <thead>
-                        <tr style={{ borderBottom: '1px solid #2A2A2A' }}>
+                        <tr style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
                           {['Date', 'Category', 'Amount', 'Status'].map((h) => (
                             <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#9CA3AF', fontWeight: 600 }}>{h}</th>
                           ))}
@@ -472,7 +472,7 @@ export function Budgets() {
                       </thead>
                       <tbody>
                         {detailExpenses.slice(0, 20).map((e, i) => (
-                          <tr key={i} style={{ borderBottom: '1px solid #2A2A2A' }}>
+                          <tr key={i} style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
                             <td style={{ padding: '10px 14px' }}>{e.expense_date || '—'}</td>
                             <td style={{ padding: '10px 14px', color: '#9CA3AF' }}>{e.category || '—'}</td>
                             <td style={{ padding: '10px 14px' }}>{fmt(e.amount)}</td>
@@ -506,8 +506,8 @@ export function Budgets() {
                 value={form.department_id}
                 onChange={(e) => setForm((f) => ({ ...f, department_id: e.target.value }))}
                 style={{
-                  width: '100%', background: "var(--gp-background)", border: '1px solid #2A2A2A',
-                  borderRadius: 0, color: '#fff', padding: '8px 12px', fontSize: 13,
+                  width: '100%', background: "var(--gp-background)", border: '1px solid var(--gp-border-light)',
+                  borderRadius: 0, color: 'var(--gp-black)', padding: '8px 12px', fontSize: 13,
                 }}
               >
                 <option value="">Select department</option>
@@ -524,8 +524,8 @@ export function Budgets() {
                 onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                 placeholder="e.g. Marketing, Salaries"
                 style={{
-                  width: '100%', background: "var(--gp-background)", border: '1px solid #2A2A2A',
-                  borderRadius: 0, color: '#fff', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
+                  width: '100%', background: "var(--gp-background)", border: '1px solid var(--gp-border-light)',
+                  borderRadius: 0, color: 'var(--gp-black)', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -551,8 +551,8 @@ export function Budgets() {
                 onChange={(e) => setForm((f) => ({ ...f, period: e.target.value }))}
                 placeholder="e.g. Q1 2026, Jan 2026"
                 style={{
-                  width: '100%', background: "var(--gp-background)", border: '1px solid #2A2A2A',
-                  borderRadius: 0, color: '#fff', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
+                  width: '100%', background: "var(--gp-background)", border: '1px solid var(--gp-border-light)',
+                  borderRadius: 0, color: 'var(--gp-black)', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -565,8 +565,8 @@ export function Budgets() {
                   value={form.start_date}
                   onChange={(e) => setForm((f) => ({ ...f, start_date: e.target.value }))}
                   style={{
-                    width: '100%', background: "var(--gp-background)", border: '1px solid #2A2A2A',
-                    borderRadius: 0, color: '#fff', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
+                    width: '100%', background: "var(--gp-background)", border: '1px solid var(--gp-border-light)',
+                    borderRadius: 0, color: 'var(--gp-black)', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
                     colorScheme: 'dark',
                   }}
                 />
@@ -578,8 +578,8 @@ export function Budgets() {
                   value={form.end_date}
                   onChange={(e) => setForm((f) => ({ ...f, end_date: e.target.value }))}
                   style={{
-                    width: '100%', background: "var(--gp-background)", border: '1px solid #2A2A2A',
-                    borderRadius: 0, color: '#fff', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
+                    width: '100%', background: "var(--gp-background)", border: '1px solid var(--gp-border-light)',
+                    borderRadius: 0, color: 'var(--gp-black)', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
                     colorScheme: 'dark',
                   }}
                 />
@@ -590,7 +590,7 @@ export function Budgets() {
               <button
                 onClick={() => { setShowModal(false); setEditBudget(null); setForm(EMPTY_FORM) }}
                 style={{
-                  flex: 1, padding: '9px 0', background: "var(--gp-card)", border: '1px solid #2A2A2A',
+                  flex: 1, padding: '9px 0', background: "var(--gp-card)", border: '1px solid var(--gp-border-light)',
                   borderRadius: 0, color: '#9CA3AF', cursor: 'pointer', fontSize: 13,
                 }}
               >

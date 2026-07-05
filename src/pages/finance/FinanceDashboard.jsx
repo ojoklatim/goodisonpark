@@ -30,7 +30,7 @@ const LAST_6 = Array.from({ length: 6 }, (_, i) => {
 function StatCard({ label, value, icon: Icon, accent, sub }) {
   return (
     <div style={{
-      background: "var(--gp-card)", border: '1px solid #2A2A2A', borderRadius: 0,
+      background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', borderRadius: 0,
       padding: '20px 22px', flex: 1, minWidth: 160,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -41,16 +41,16 @@ function StatCard({ label, value, icon: Icon, accent, sub }) {
           </div>
         )}
       </div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.5px' }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--gp-black)', letterSpacing: '-0.5px' }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: '#4B5563', marginTop: 4 }}>{sub}</div>}
     </div>
   )
 }
 
 const tooltipStyle = {
-  contentStyle: { background: "var(--gp-card)", border: '1px solid #2A2A2A', borderRadius: 0 },
+  contentStyle: { background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', borderRadius: 0 },
   labelStyle: { color: '#9CA3AF' },
-  itemStyle: { color: '#fff' },
+  itemStyle: { color: 'var(--gp-black)' },
 }
 
 function inCurrentMonth(dateStr) {
@@ -247,8 +247,8 @@ export function FinanceDashboard() {
           {/* Row 2: Bar + Pie */}
           <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, marginBottom: 24 }}>
             {/* Revenue vs Expenses BarChart */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: 22 }}>
-              <h3 style={{ margin: '0 0 18px', fontSize: 14, fontWeight: 700, color: '#fff' }}>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: 22 }}>
+              <h3 style={{ margin: '0 0 18px', fontSize: 14, fontWeight: 700, color: 'var(--gp-black)' }}>
                 Revenue vs Expenses — Last 6 Months
               </h3>
               <ResponsiveContainer width="100%" height={250}>
@@ -264,8 +264,8 @@ export function FinanceDashboard() {
             </div>
 
             {/* Expense Breakdown PieChart */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: 22 }}>
-              <h3 style={{ margin: '0 0 18px', fontSize: 14, fontWeight: 700, color: '#fff' }}>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: 22 }}>
+              <h3 style={{ margin: '0 0 18px', fontSize: 14, fontWeight: 700, color: 'var(--gp-black)' }}>
                 Expense Breakdown
               </h3>
               {expPieData.length === 0 ? (
@@ -292,8 +292,8 @@ export function FinanceDashboard() {
           {/* Row 3: Invoice Status Pie + P&L Table */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
             {/* Invoice Status Distribution */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: 22 }}>
-              <h3 style={{ margin: '0 0 18px', fontSize: 14, fontWeight: 700, color: '#fff' }}>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: 22 }}>
+              <h3 style={{ margin: '0 0 18px', fontSize: 14, fontWeight: 700, color: 'var(--gp-black)' }}>
                 Invoice Status Distribution
               </h3>
               {statusPieData.length === 0 ? (
@@ -320,14 +320,14 @@ export function FinanceDashboard() {
             </div>
 
             {/* Monthly P&L Table */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: 22 }}>
-              <h3 style={{ margin: '0 0 18px', fontSize: 14, fontWeight: 700, color: '#fff' }}>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: 22 }}>
+              <h3 style={{ margin: '0 0 18px', fontSize: 14, fontWeight: 700, color: 'var(--gp-black)' }}>
                 Monthly P&amp;L
               </h3>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #2A2A2A' }}>
+                    <tr style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
                       {['Month', 'Revenue', 'Expenses', 'Net', '% Margin'].map((h) => (
                         <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#9CA3AF', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
                       ))}

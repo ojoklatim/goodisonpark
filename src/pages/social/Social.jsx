@@ -247,8 +247,8 @@ export function Social() {
 
   const chartTooltipStyle = {
     backgroundColor: "var(--gp-card)",
-    border: '1px solid #2A2A2A',
-    color: '#FFFFFF',
+    border: '1px solid var(--gp-border-light)',
+    color: 'var(--gp-black)',
     fontSize: 12,
   }
 
@@ -268,7 +268,7 @@ export function Social() {
               style={{
                 background: 'transparent',
                 color: '#9CA3AF',
-                border: '1px solid #2A2A2A',
+                border: '1px solid var(--gp-border-light)',
                 padding: '8px 14px',
                 fontSize: 13,
                 cursor: 'pointer',
@@ -285,7 +285,7 @@ export function Social() {
               style={{
                 background: 'transparent',
                 color: '#9CA3AF',
-                border: '1px solid #2A2A2A',
+                border: '1px solid var(--gp-border-light)',
                 padding: '8px 14px',
                 fontSize: 13,
                 cursor: 'pointer',
@@ -314,7 +314,7 @@ export function Social() {
                 gap: 8,
                 padding: '8px 12px',
                 background: "var(--gp-card)",
-                border: '1px solid #2A2A2A',
+                border: '1px solid var(--gp-border-light)',
               }}
             >
               <div
@@ -327,13 +327,13 @@ export function Social() {
                   justifyContent: 'center',
                   fontSize: 9,
                   fontWeight: 700,
-                  color: '#FFFFFF',
+                  color: 'var(--gp-black)',
                   flexShrink: 0,
                 }}
               >
                 {p.initial}
               </div>
-              <span style={{ color: '#FFFFFF', fontSize: 13, fontWeight: 500 }}>{p.name}</span>
+              <span style={{ color: 'var(--gp-black)', fontSize: 13, fontWeight: 500 }}>{p.name}</span>
               <div
                 style={{
                   width: 8,
@@ -352,7 +352,7 @@ export function Social() {
         style={{
           display: 'flex',
           gap: 0,
-          borderBottom: '1px solid #2A2A2A',
+          borderBottom: '1px solid var(--gp-border-light)',
           marginTop: 28,
         }}
       >
@@ -387,8 +387,8 @@ export function Social() {
       {/* Charts Row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 24 }}>
         {/* Growth Line Chart */}
-        <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: 20 }}>
-          <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
+        <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: 20 }}>
+          <div style={{ color: 'var(--gp-black)', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
             Follower Growth (Last 30 Days)
           </div>
           {growthData.length === 0 ? (
@@ -408,8 +408,8 @@ export function Social() {
         </div>
 
         {/* Engagement Bar Chart */}
-        <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: 20 }}>
-          <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
+        <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: 20 }}>
+          <div style={{ color: 'var(--gp-black)', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
             Daily Engagements (Last 7 Days)
           </div>
           {last7Days.length === 0 ? (
@@ -433,8 +433,8 @@ export function Social() {
       </div>
 
       {/* Comparative Line Chart */}
-      <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: 20, marginTop: 16 }}>
-        <div style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
+      <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: 20, marginTop: 16 }}>
+        <div style={{ color: 'var(--gp-black)', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
           Comparative Follower Growth (All Platforms)
         </div>
         {comparativeData.length === 0 ? (
@@ -472,7 +472,7 @@ export function Social() {
           marginTop: 16,
         }}
       >
-        <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: 20 }}>
+        <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: 20 }}>
           <div style={{ color: '#9CA3AF', fontSize: 12, marginBottom: 8 }}>Follower Growth This Month</div>
           <div
             style={{
@@ -486,9 +486,9 @@ export function Social() {
           </div>
           <div style={{ color: '#4B5563', fontSize: 12, marginTop: 4 }}>followers vs 30 days ago</div>
         </div>
-        <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: 20 }}>
+        <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: 20 }}>
           <div style={{ color: '#9CA3AF', fontSize: 12, marginBottom: 8 }}>Best Performing Day</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: '#FFFFFF' }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--gp-black)' }}>
             {bestDay ? new Date(bestDay).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
           </div>
           <div style={{ color: '#4B5563', fontSize: 12, marginTop: 4 }}>highest engagement in last 30 days</div>
@@ -515,8 +515,8 @@ export function Social() {
           onChange={(e) => setDateStart(e.target.value)}
           style={{
             background: "var(--gp-card)",
-            border: '1px solid #2A2A2A',
-            color: '#FFFFFF',
+            border: '1px solid var(--gp-border-light)',
+            color: 'var(--gp-black)',
             padding: '6px 10px',
             fontSize: 13,
             outline: 'none',
@@ -529,8 +529,8 @@ export function Social() {
           onChange={(e) => setDateEnd(e.target.value)}
           style={{
             background: "var(--gp-card)",
-            border: '1px solid #2A2A2A',
-            color: '#FFFFFF',
+            border: '1px solid var(--gp-border-light)',
+            color: 'var(--gp-black)',
             padding: '6px 10px',
             fontSize: 13,
             outline: 'none',
@@ -542,7 +542,7 @@ export function Social() {
             style={{
               background: 'transparent',
               color: '#9CA3AF',
-              border: '1px solid #2A2A2A',
+              border: '1px solid var(--gp-border-light)',
               padding: '6px 10px',
               fontSize: 12,
               cursor: 'pointer',
@@ -554,10 +554,10 @@ export function Social() {
       </div>
 
       {/* Metrics Table */}
-      <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', overflow: 'auto' }}>
+      <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #2A2A2A' }}>
+            <tr style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
               {['Date', 'Platform', 'Followers', 'Views', 'Likes', 'Comments', 'Shares', 'Engagements', 'Reach'].map(
                 (col) => (
                   <th
@@ -600,18 +600,18 @@ export function Social() {
                 }}
               >
                 <td style={{ padding: '10px 16px', color: '#9CA3AF' }}>{m.date}</td>
-                <td style={{ padding: '10px 16px', color: '#FFFFFF', fontWeight: 500 }}>
+                <td style={{ padding: '10px 16px', color: 'var(--gp-black)', fontWeight: 500 }}>
                   {PLATFORM_NAME_MAP[m.platform] || m.platform}
                 </td>
-                <td style={{ padding: '10px 16px', color: '#FFFFFF' }}>{(m.followers || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 16px', color: '#FFFFFF' }}>{(m.views_count || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 16px', color: '#FFFFFF' }}>{(m.likes || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 16px', color: '#FFFFFF' }}>{(m.comments || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 16px', color: '#FFFFFF' }}>{(m.shares || 0).toLocaleString()}</td>
+                <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.followers || 0).toLocaleString()}</td>
+                <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.views_count || 0).toLocaleString()}</td>
+                <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.likes || 0).toLocaleString()}</td>
+                <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.comments || 0).toLocaleString()}</td>
+                <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.shares || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 16px', color: "var(--gp-blue)", fontWeight: 600 }}>
                   {((m.likes || 0) + (m.comments || 0) + (m.shares || 0)).toLocaleString()}
                 </td>
-                <td style={{ padding: '10px 16px', color: '#FFFFFF' }}>{(m.reach || 0).toLocaleString()}</td>
+                <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.reach || 0).toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
@@ -630,8 +630,8 @@ export function Social() {
                 style={{
                   width: '100%',
                   background: "var(--gp-card)",
-                  border: '1px solid #2A2A2A',
-                  color: '#FFFFFF',
+                  border: '1px solid var(--gp-border-light)',
+                  color: 'var(--gp-black)',
                   padding: '8px 12px',
                   fontSize: 13,
                   outline: 'none',
@@ -654,8 +654,8 @@ export function Social() {
                 style={{
                   width: '100%',
                   background: "var(--gp-card)",
-                  border: '1px solid #2A2A2A',
-                  color: '#FFFFFF',
+                  border: '1px solid var(--gp-border-light)',
+                  color: 'var(--gp-black)',
                   padding: '8px 12px',
                   fontSize: 13,
                   outline: 'none',
@@ -685,8 +685,8 @@ export function Social() {
                     style={{
                       width: '100%',
                       background: "var(--gp-card)",
-                      border: '1px solid #2A2A2A',
-                      color: '#FFFFFF',
+                      border: '1px solid var(--gp-border-light)',
+                      color: 'var(--gp-black)',
                       padding: '8px 12px',
                       fontSize: 13,
                       outline: 'none',
@@ -703,7 +703,7 @@ export function Social() {
                 style={{
                   background: 'transparent',
                   color: '#9CA3AF',
-                  border: '1px solid #2A2A2A',
+                  border: '1px solid var(--gp-border-light)',
                   padding: '8px 16px',
                   fontSize: 13,
                   cursor: 'pointer',

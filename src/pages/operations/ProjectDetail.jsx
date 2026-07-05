@@ -178,7 +178,7 @@ export function ProjectDetail() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {team.map(member => (
                   <div key={member.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '32px', height: '32px', background: "var(--gp-card)", color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 600 }}>
+                    <div style={{ width: '32px', height: '32px', background: "var(--gp-card)", color: 'var(--gp-black)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 600 }}>
                       {getInitials(member.first_name, member.last_name)}
                     </div>
                     <div>

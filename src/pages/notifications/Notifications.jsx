@@ -111,7 +111,7 @@ export function Notifications() {
         style={{
           display: 'flex',
           gap: 0,
-          borderBottom: '1px solid #2A2A2A',
+          borderBottom: '1px solid var(--gp-border-light)',
           marginBottom: 0,
           marginTop: 24,
         }}
@@ -160,7 +160,7 @@ export function Notifications() {
       <div
         style={{
           background: "var(--gp-card)",
-          border: '1px solid #2A2A2A',
+          border: '1px solid var(--gp-border-light)',
           borderTop: 'none',
         }}
       >

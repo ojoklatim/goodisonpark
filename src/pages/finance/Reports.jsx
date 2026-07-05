@@ -19,10 +19,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 function SectionCard({ title, children }) {
   return (
     <div style={{
-      background: "var(--gp-card)", border: '1px solid #2A2A2A', borderRadius: 0,
+      background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', borderRadius: 0,
       padding: 24, marginBottom: 24,
     }}>
-      <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: '#fff', borderBottom: '1px solid #2A2A2A', paddingBottom: 12 }}>
+      <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: 'var(--gp-black)', borderBottom: '1px solid var(--gp-border-light)', paddingBottom: 12 }}>
         {title}
       </h2>
       {children}
@@ -33,14 +33,14 @@ function SectionCard({ title, children }) {
 function MiniStatCard({ label, value, icon: Icon, accent }) {
   return (
     <div style={{
-      background: "var(--gp-dark)", border: '1px solid #2A2A2A', borderRadius: 0,
+      background: "var(--gp-dark)", border: '1px solid var(--gp-border-light)', borderRadius: 0,
       padding: '16px 20px', flex: 1,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         {Icon && <Icon size={15} color={accent || '#9CA3AF'} />}
         <span style={{ fontSize: 12, color: '#9CA3AF' }}>{label}</span>
       </div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{value}</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--gp-black)' }}>{value}</div>
     </div>
   )
 }
@@ -226,9 +226,9 @@ export function Reports() {
 
   const isLoading = loadingInvoices || loadingExpenses
   const tooltipStyle = {
-    contentStyle: { background: "var(--gp-card)", border: '1px solid #2A2A2A', borderRadius: 0 },
+    contentStyle: { background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', borderRadius: 0 },
     labelStyle: { color: '#9CA3AF' },
-    itemStyle: { color: '#fff' },
+    itemStyle: { color: 'var(--gp-black)' },
   }
 
   return (
@@ -244,7 +244,7 @@ export function Reports() {
               onClick={exportCSV}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
-                background: "var(--gp-card)", border: '1px solid #2A2A2A', borderRadius: 0,
+                background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', borderRadius: 0,
                 color: '#9CA3AF', cursor: 'pointer', fontSize: 13,
               }}
             >
@@ -269,7 +269,7 @@ export function Reports() {
         className="no-print"
         style={{
           display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap',
-          background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '14px 18px',
+          background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '14px 18px',
           marginTop: 20, marginBottom: 24,
         }}
       >
@@ -280,8 +280,8 @@ export function Reports() {
             value={startMonth}
             onChange={(e) => setStartMonth(e.target.value)}
             style={{
-              background: "var(--gp-background)", border: '1px solid #2A2A2A', borderRadius: 0,
-              color: '#fff', padding: '6px 10px', fontSize: 13, colorScheme: 'dark',
+              background: "var(--gp-background)", border: '1px solid var(--gp-border-light)', borderRadius: 0,
+              color: 'var(--gp-black)', padding: '6px 10px', fontSize: 13, colorScheme: 'dark',
             }}
           />
         </div>
@@ -292,8 +292,8 @@ export function Reports() {
             value={endMonth}
             onChange={(e) => setEndMonth(e.target.value)}
             style={{
-              background: "var(--gp-background)", border: '1px solid #2A2A2A', borderRadius: 0,
-              color: '#fff', padding: '6px 10px', fontSize: 13, colorScheme: 'dark',
+              background: "var(--gp-background)", border: '1px solid var(--gp-border-light)', borderRadius: 0,
+              color: 'var(--gp-black)', padding: '6px 10px', fontSize: 13, colorScheme: 'dark',
             }}
           />
         </div>
@@ -303,8 +303,8 @@ export function Reports() {
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
             style={{
-              background: "var(--gp-background)", border: '1px solid #2A2A2A', borderRadius: 0,
-              color: '#fff', padding: '6px 10px', fontSize: 13, minWidth: 160,
+              background: "var(--gp-background)", border: '1px solid var(--gp-border-light)', borderRadius: 0,
+              color: 'var(--gp-black)', padding: '6px 10px', fontSize: 13, minWidth: 160,
             }}
           >
             <option value="">All Departments</option>
@@ -357,7 +357,7 @@ export function Reports() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #2A2A2A' }}>
+                  <tr style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
                     {['Department', 'Revenue', 'Expenses', 'Net', '% Margin'].map((h) => (
                       <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#9CA3AF', fontWeight: 600 }}>{h}</th>
                     ))}
@@ -368,7 +368,7 @@ export function Reports() {
                     <tr><td colSpan={5} style={{ padding: '20px 14px', color: '#4B5563', textAlign: 'center' }}>No department data</td></tr>
                   ) : (
                     deptPL.map((d) => (
-                      <tr key={d.id} style={{ borderBottom: '1px solid #2A2A2A' }}>
+                      <tr key={d.id} style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
                         <td style={{ padding: '10px 14px', fontWeight: 500 }}>{d.name}</td>
                         <td style={{ padding: '10px 14px', color: '#10B981' }}>{fmt(d.revenue)}</td>
                         <td style={{ padding: '10px 14px', color: '#EF4444' }}>{fmt(d.expenses)}</td>
@@ -391,7 +391,7 @@ export function Reports() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #2A2A2A' }}>
+                  <tr style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
                     {['Rank', 'Client Name', 'Total Revenue', 'Deal Count'].map((h) => (
                       <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#9CA3AF', fontWeight: 600 }}>{h}</th>
                     ))}
@@ -402,7 +402,7 @@ export function Reports() {
                     <tr><td colSpan={4} style={{ padding: '20px 14px', color: '#4B5563', textAlign: 'center' }}>No client data</td></tr>
                   ) : (
                     top10.map((c, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #2A2A2A' }}>
+                      <tr key={i} style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
                         <td style={{ padding: '10px 14px' }}>
                           <span style={{
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',

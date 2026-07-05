@@ -131,12 +131,12 @@ export function Roles() {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr>
-                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid #2A2A2A', fontWeight: 600, fontSize: '14px' }}>Module</th>
-                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid #2A2A2A', fontWeight: 600, fontSize: '14px' }}>View</th>
-                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid #2A2A2A', fontWeight: 600, fontSize: '14px' }}>Create</th>
-                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid #2A2A2A', fontWeight: 600, fontSize: '14px' }}>Edit</th>
-                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid #2A2A2A', fontWeight: 600, fontSize: '14px' }}>Delete</th>
-                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid #2A2A2A', fontWeight: 600, fontSize: '14px' }}>Export</th>
+                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid var(--gp-border-light)', fontWeight: 600, fontSize: '14px' }}>Module</th>
+                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid var(--gp-border-light)', fontWeight: 600, fontSize: '14px' }}>View</th>
+                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid var(--gp-border-light)', fontWeight: 600, fontSize: '14px' }}>Create</th>
+                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid var(--gp-border-light)', fontWeight: 600, fontSize: '14px' }}>Edit</th>
+                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid var(--gp-border-light)', fontWeight: 600, fontSize: '14px' }}>Delete</th>
+                <th style={{ padding: '12px', background: "var(--gp-background)", color: 'var(--gp-black)', borderBottom: '1px solid var(--gp-border-light)', fontWeight: 600, fontSize: '14px' }}>Export</th>
               </tr>
             </thead>
             <tbody>

@@ -158,12 +158,12 @@ export function Projects() {
 
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   {proj.team.slice(0, 5).map((member, i) => (
-                    <div key={member.id} title={`${member.first_name} ${member.last_name}`} style={{ width: '28px', height: '28px', background: "var(--gp-card)", color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 600, border: '2px solid #FFFFFF', marginLeft: i > 0 ? '-8px' : 0, zIndex: 10 - i }}>
+                    <div key={member.id} title={`${member.first_name} ${member.last_name}`} style={{ width: '28px', height: '28px', background: "var(--gp-card)", color: 'var(--gp-black)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 600, border: '2px solid var(--gp-background)', marginLeft: i > 0 ? '-8px' : 0, zIndex: 10 - i }}>
                       {getInitials(member.first_name, member.last_name)}
                     </div>
                   ))}
                   {proj.team.length > 5 && (
-                    <div style={{ width: '28px', height: '28px', background: '#F3F4F6', color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 600, border: '2px solid #FFFFFF', marginLeft: '-8px', zIndex: 1 }}>
+                    <div style={{ width: '28px', height: '28px', background: '#F3F4F6', color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 600, border: '2px solid var(--gp-background)', marginLeft: '-8px', zIndex: 1 }}>
                       +{proj.team.length - 5}
                     </div>
                   )}

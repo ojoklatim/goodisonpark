@@ -170,7 +170,7 @@ export function SocialSettings() {
               style={{
                 padding: 24,
                 background: "var(--gp-card)",
-                border: '1px solid #2A2A2A',
+                border: '1px solid var(--gp-border-light)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 16,
@@ -188,14 +188,14 @@ export function SocialSettings() {
                     justifyContent: 'center',
                     fontSize: 13,
                     fontWeight: 700,
-                    color: '#FFFFFF',
+                    color: 'var(--gp-black)',
                     flexShrink: 0,
                   }}
                 >
                   {platform.initial}
                 </div>
                 <div>
-                  <div style={{ color: '#FFFFFF', fontSize: 16, fontWeight: 700 }}>{platform.name}</div>
+                  <div style={{ color: 'var(--gp-black)', fontSize: 16, fontWeight: 700 }}>{platform.name}</div>
                   <div style={{ color: '#9CA3AF', fontSize: 12 }}>Manual metrics entry</div>
                 </div>
               </div>
@@ -237,7 +237,7 @@ export function SocialSettings() {
                 style={{
                   padding: '6px 10px',
                   background: "var(--gp-background)",
-                  border: '1px solid #2A2A2A',
+                  border: '1px solid var(--gp-border-light)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 6,
@@ -257,7 +257,7 @@ export function SocialSettings() {
                     flex: 1,
                     background: isConnected ? 'transparent' : "var(--gp-blue)",
                     color: isConnected ? '#9CA3AF' : "var(--gp-background)",
-                    border: isConnected ? '1px solid #2A2A2A' : 'none',
+                    border: isConnected ? '1px solid var(--gp-border-light)' : 'none',
                     padding: '8px 0',
                     fontSize: 13,
                     fontWeight: 700,
@@ -347,8 +347,8 @@ export function SocialSettings() {
                 style={{
                   width: '100%',
                   background: "var(--gp-card)",
-                  border: '1px solid #2A2A2A',
-                  color: '#FFFFFF',
+                  border: '1px solid var(--gp-border-light)',
+                  color: 'var(--gp-black)',
                   padding: '9px 12px',
                   fontSize: 13,
                   outline: 'none',
@@ -369,8 +369,8 @@ export function SocialSettings() {
                 style={{
                   width: '100%',
                   background: "var(--gp-card)",
-                  border: '1px solid #2A2A2A',
-                  color: '#FFFFFF',
+                  border: '1px solid var(--gp-border-light)',
+                  color: 'var(--gp-black)',
                   padding: '9px 12px',
                   fontSize: 13,
                   outline: 'none',
@@ -392,8 +392,8 @@ export function SocialSettings() {
                 style={{
                   width: '100%',
                   background: "var(--gp-card)",
-                  border: '1px solid #2A2A2A',
-                  color: '#FFFFFF',
+                  border: '1px solid var(--gp-border-light)',
+                  color: 'var(--gp-black)',
                   padding: '9px 12px',
                   fontSize: 13,
                   outline: 'none',
@@ -412,7 +412,7 @@ export function SocialSettings() {
                 style={{
                   background: 'transparent',
                   color: '#9CA3AF',
-                  border: '1px solid #2A2A2A',
+                  border: '1px solid var(--gp-border-light)',
                   padding: '8px 16px',
                   fontSize: 13,
                   cursor: 'pointer',

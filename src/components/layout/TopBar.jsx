@@ -188,7 +188,7 @@ export function TopBar({ breadcrumb }) {
             style={{
               width: 32, height: 32,
               background: "var(--gp-card)",
-              border: '1px solid #2A2A2A',
+              border: '1px solid var(--gp-border-light)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '11px', fontWeight: 700, color: "var(--gp-blue)",
               cursor: 'pointer', borderRadius: 0,

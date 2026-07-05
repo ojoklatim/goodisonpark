@@ -63,7 +63,7 @@ export class ErrorBoundary extends React.Component {
         {this.state.error?.message && (
           <p style={{
             fontSize: 12, color: '#4B5563',
-            background: "var(--gp-card)", border: '1px solid #2A2A2A',
+            background: "var(--gp-card)", border: '1px solid var(--gp-border-light)',
             padding: '8px 16px', marginBottom: 32,
             maxWidth: 480, wordBreak: 'break-word',
           }}>
@@ -93,7 +93,7 @@ export class ErrorBoundary extends React.Component {
               padding: '10px 24px',
               background: 'transparent',
               color: '#9CA3AF',
-              border: '1px solid #2A2A2A',
+              border: '1px solid var(--gp-border-light)',
               fontFamily: 'Inter, sans-serif',
               fontWeight: 500,
               fontSize: 14,

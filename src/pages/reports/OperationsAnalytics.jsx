@@ -158,8 +158,8 @@ export function OperationsAnalytics() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
 
             {/* 1. Project Status Distribution */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Project Status Distribution</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Project Status Distribution</h3>
               {projectStatusData.length === 0 ? (
                 <div style={{ color: '#4B5563', textAlign: 'center', padding: '80px 0' }}>No project data</div>
               ) : (
@@ -169,7 +169,7 @@ export function OperationsAnalytics() {
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={{ stroke: '#4B5563' }}>
                       {projectStatusData.map((_, idx) => <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }} />
+                    <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }} />
                     <Legend wrapperStyle={{ color: '#9CA3AF', fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -177,13 +177,13 @@ export function OperationsAnalytics() {
             </div>
 
             {/* 2. Task Completion Rate Over Time */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Task Completion Rate Over Time</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Task Completion Rate Over Time</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={taskCompletionOverTime}>
                   <XAxis dataKey="month" tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[0, 100]} tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
-                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }}
+                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }}
                     formatter={v => [`${v}%`, 'Completion Rate']} />
                   <Line type="monotone" dataKey="rate" stroke="var(--gp-blue)" strokeWidth={2} dot={{ fill: "var(--gp-blue)", r: 4 }} activeDot={{ r: 6 }} />
                 </LineChart>
@@ -191,13 +191,13 @@ export function OperationsAnalytics() {
             </div>
 
             {/* 3. Tasks by Priority */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Tasks by Priority</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Tasks by Priority</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={priorityData}>
                   <XAxis dataKey="priority" tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }} />
+                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }} />
                   <Bar dataKey="count" radius={0}>
                     {priorityData.map((_, idx) => <Cell key={idx} fill={[CHART_COLORS[3], CHART_COLORS[2], CHART_COLORS[0], CHART_COLORS[1]][idx]} />)}
                   </Bar>
@@ -206,13 +206,13 @@ export function OperationsAnalytics() {
             </div>
 
             {/* 4. Projects vs Tasks overview */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Projects & Tasks by Dept</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Projects & Tasks by Dept</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={deptWorkload}>
                   <XAxis dataKey="dept" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }} />
+                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }} />
                   <Legend wrapperStyle={{ color: '#9CA3AF', fontSize: 12 }} />
                   <Bar dataKey="activeProjects" fill="var(--gp-blue)" name="Active Projects" />
                   <Bar dataKey="openTasks" fill="#10B981" name="Open Tasks" />
@@ -222,11 +222,11 @@ export function OperationsAnalytics() {
           </div>
 
           {/* Department Workload Table */}
-          <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-            <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Department Workload</h3>
+          <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+            <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Department Workload</h3>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #2A2A2A' }}>
+                <tr style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
                   {['Department','Active Projects','Open Tasks','Overdue Tasks','Team Size','Utilization %'].map(col => (
                     <th key={col} style={{ padding: '10px 12px', textAlign: 'left', color: '#4B5563', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{col}</th>
                   ))}
@@ -234,8 +234,8 @@ export function OperationsAnalytics() {
               </thead>
               <tbody>
                 {deptWorkload.map((row, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid #2A2A2A' }}>
-                    <td style={{ padding: '12px 12px', color: '#FFFFFF', fontWeight: '500' }}>{row.dept}</td>
+                  <tr key={idx} style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
+                    <td style={{ padding: '12px 12px', color: 'var(--gp-black)', fontWeight: '500' }}>{row.dept}</td>
                     <td style={{ padding: '12px 12px', color: "var(--gp-blue)" }}>{row.activeProjects}</td>
                     <td style={{ padding: '12px 12px', color: '#9CA3AF' }}>{row.openTasks}</td>
                     <td style={{ padding: '12px 12px', color: row.overdueTasks > 0 ? '#EF4444' : '#9CA3AF', fontWeight: row.overdueTasks > 0 ? '600' : '400' }}>{row.overdueTasks}</td>

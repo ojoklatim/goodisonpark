@@ -224,8 +224,8 @@ export function Review() {
                   </label>
                   {overrideScore && (
                     <div style={{ display: 'flex', gap: '16px' }}>
-                      <Input type="number" min="1" max="5" step="0.1" value={manualScore} onChange={e => setManualScore(e.target.value)} placeholder="Score (1-5)" style={{ background: "var(--gp-card)", color: '#FFFFFF', border: '1px solid #2A2A2A', width: '120px' }} />
-                      <Input value={comments.overrideReason} onChange={e => setComments({...comments, overrideReason: e.target.value})} placeholder="Reason for override..." style={{ background: "var(--gp-card)", color: '#FFFFFF', border: '1px solid #2A2A2A', flex: 1 }} />
+                      <Input type="number" min="1" max="5" step="0.1" value={manualScore} onChange={e => setManualScore(e.target.value)} placeholder="Score (1-5)" style={{ background: "var(--gp-card)", color: 'var(--gp-black)', border: '1px solid var(--gp-border-light)', width: '120px' }} />
+                      <Input value={comments.overrideReason} onChange={e => setComments({...comments, overrideReason: e.target.value})} placeholder="Reason for override..." style={{ background: "var(--gp-card)", color: 'var(--gp-black)', border: '1px solid var(--gp-border-light)', flex: 1 }} />
                     </div>
                   )}
                 </div>

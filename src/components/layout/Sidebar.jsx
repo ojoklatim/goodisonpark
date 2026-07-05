@@ -186,7 +186,7 @@ export function Sidebar() {
               <div style={{
                 padding: '12px 16px 4px',
                 fontSize: '9px', fontWeight: 700,
-                color: '#4B5563',
+                color: 'var(--gp-muted)',
                 letterSpacing: '0.12em',
                 textTransform: 'uppercase',
               }}>
@@ -274,9 +274,9 @@ export function Sidebar() {
               <button
                 onClick={handleLogout}
                 title="Sign Out"
-                style={{ background: 'none', border: 'none', color: '#4B5563', cursor: 'pointer', padding: 4, flexShrink: 0 }}
+                style={{ background: 'none', border: 'none', color: 'var(--gp-muted)', cursor: 'pointer', padding: 4, flexShrink: 0 }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = '#EF4444' }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = '#4B5563' }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--gp-muted)' }}
               >
                 <LogOut size={14} />
               </button>

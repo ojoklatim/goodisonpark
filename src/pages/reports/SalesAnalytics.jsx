@@ -232,16 +232,16 @@ export function SalesAnalytics() {
         {preset === 'custom' && (
           <>
             <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
-              style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', padding: '8px', borderRadius: '0px', fontSize: '14px' }} />
+              style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', padding: '8px', borderRadius: '0px', fontSize: '14px' }} />
             <span style={{ color: '#9CA3AF' }}>to</span>
             <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
-              style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', padding: '8px', borderRadius: '0px', fontSize: '14px' }} />
+              style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', padding: '8px', borderRadius: '0px', fontSize: '14px' }} />
           </>
         )}
 
         {/* Department Filter */}
         <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
-          style={{ marginLeft: '16px', background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', padding: '8px 12px', borderRadius: '0px', fontSize: '14px' }}>
+          style={{ marginLeft: '16px', background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', padding: '8px 12px', borderRadius: '0px', fontSize: '14px' }}>
           <option value="">All Departments</option>
           {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
@@ -251,7 +251,7 @@ export function SalesAnalytics() {
           <Button onClick={handleExportCSV} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Download size={16} /> Export CSV
           </Button>
-          <Button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: "var(--gp-card)", border: '1px solid #2A2A2A' }}>
+          <Button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: "var(--gp-card)", border: '1px solid var(--gp-border-light)' }}>
             <Printer size={16} /> Print
           </Button>
         </div>
@@ -289,13 +289,13 @@ export function SalesAnalytics() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
 
             {/* 1. Monthly Sales Revenue */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Monthly Sales Revenue</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Monthly Sales Revenue</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={monthlyRevenue}>
                   <XAxis dataKey="month" tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `£${(v/1000).toFixed(0)}k`} />
-                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }}
+                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }}
                     formatter={v => [`£${v.toLocaleString()}`, 'Revenue']} />
                   <Bar dataKey="revenue" fill="var(--gp-blue)" radius={0} />
                 </BarChart>
@@ -303,13 +303,13 @@ export function SalesAnalytics() {
             </div>
 
             {/* 2. Deal Stage Conversion Funnel */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Deal Stage Funnel</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Deal Stage Funnel</h3>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={stageFunnel} layout="vertical">
                   <XAxis type="number" tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis dataKey="stage" type="category" tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} width={90} />
-                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }} />
+                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }} />
                   <Bar dataKey="count" radius={0}>
                     {stageFunnel.map((_, idx) => <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />)}
                   </Bar>
@@ -318,8 +318,8 @@ export function SalesAnalytics() {
             </div>
 
             {/* 3. Lead Source PieChart */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Lead Source Analysis</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Lead Source Analysis</h3>
               {leadSourceData.length === 0 ? (
                 <div style={{ color: '#4B5563', textAlign: 'center', padding: '80px 0' }}>No lead data available</div>
               ) : (
@@ -329,7 +329,7 @@ export function SalesAnalytics() {
                       labelLine={{ stroke: '#4B5563' }}>
                       {leadSourceData.map((_, idx) => <Cell key={idx} fill={CHART_COLORS[idx % CHART_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }} />
+                    <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }} />
                     <Legend wrapperStyle={{ color: '#9CA3AF', fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -337,8 +337,8 @@ export function SalesAnalytics() {
             </div>
 
             {/* 4. Avg Deal Cycle Time */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 24px', fontSize: '16px', fontWeight: '600', alignSelf: 'flex-start' }}>Avg Deal Cycle Time</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 24px', fontSize: '16px', fontWeight: '600', alignSelf: 'flex-start' }}>Avg Deal Cycle Time</h3>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '72px', fontWeight: '800', color: "var(--gp-blue)", lineHeight: 1 }}>{avgCycleDays}</div>
                 <div style={{ fontSize: '20px', color: '#9CA3AF', marginTop: '8px' }}>days on average</div>
@@ -348,14 +348,14 @@ export function SalesAnalytics() {
           </div>
 
           {/* Agent Performance Table */}
-          <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px', marginBottom: '24px' }}>
-            <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Agent Performance</h3>
+          <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px', marginBottom: '24px' }}>
+            <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Agent Performance</h3>
             <DataTable columns={agentColumns} data={agentRows} />
           </div>
 
           {/* Top 10 Clients */}
-          <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-            <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Top 10 Clients by Revenue</h3>
+          <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+            <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Top 10 Clients by Revenue</h3>
             <DataTable columns={clientColumns} data={topClients} />
           </div>
         </>

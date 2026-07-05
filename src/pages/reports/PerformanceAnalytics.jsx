@@ -185,7 +185,7 @@ export function PerformanceAnalytics() {
       {/* Filters */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)}
-          style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', padding: '8px 12px', borderRadius: '0px', fontSize: '14px' }}>
+          style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', padding: '8px 12px', borderRadius: '0px', fontSize: '14px' }}>
           <option value="">All Departments</option>
           {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
@@ -209,13 +209,13 @@ export function PerformanceAnalytics() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
 
             {/* 1. Dept KPI Score */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Dept KPI Score (Avg)</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Dept KPI Score (Avg)</h3>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={deptKpiData}>
                   <XAxis dataKey="dept" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[0, 10]} tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }} />
+                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }} />
                   <Bar dataKey="score" fill="var(--gp-blue)" radius={0}>
                     {deptKpiData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Bar>
@@ -224,13 +224,13 @@ export function PerformanceAnalytics() {
             </div>
 
             {/* 2. Attendance Rate by Dept */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Attendance Rate by Dept (%)</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Attendance Rate by Dept (%)</h3>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={deptAttData}>
                   <XAxis dataKey="dept" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[0, 100]} tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
-                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }} formatter={v => [`${v}%`, 'Attendance']} />
+                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }} formatter={v => [`${v}%`, 'Attendance']} />
                   <Bar dataKey="rate" fill="#10B981" radius={0}>
                     {deptAttData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Bar>
@@ -239,13 +239,13 @@ export function PerformanceAnalytics() {
             </div>
 
             {/* 3. Task Completion Rate by Dept */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Task Completion Rate by Dept (%)</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Task Completion Rate by Dept (%)</h3>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={deptTaskData}>
                   <XAxis dataKey="dept" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[0, 100]} tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
-                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }} formatter={v => [`${v}%`, 'Completion']} />
+                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }} formatter={v => [`${v}%`, 'Completion']} />
                   <Bar dataKey="rate" fill="#F59E0B" radius={0}>
                     {deptTaskData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Bar>
@@ -254,13 +254,13 @@ export function PerformanceAnalytics() {
             </div>
 
             {/* 4. Rewards vs Penalties by Month */}
-            <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Rewards vs Penalties by Month</h3>
+            <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: '0 0 16px', fontSize: '16px', fontWeight: '600' }}>Rewards vs Penalties by Month</h3>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={rewardsByMonth}>
                   <XAxis dataKey="month" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }} />
+                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }} />
                   <Legend wrapperStyle={{ color: '#9CA3AF', fontSize: 12 }} />
                   <Bar dataKey="rewards" fill="#10B981" radius={0} name="Rewards" />
                   <Bar dataKey="penalties" fill="#EF4444" radius={0} name="Penalties" />
@@ -270,9 +270,9 @@ export function PerformanceAnalytics() {
           </div>
 
           {/* Leaderboard */}
-          <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px', marginBottom: '24px' }}>
+          <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h3 style={{ color: '#FFFFFF', margin: 0, fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 style={{ color: 'var(--gp-black)', margin: 0, fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Medal size={18} color="#F59E0B" /> Top Performers
               </h3>
               <div style={{ display: 'flex', gap: 0 }}>
@@ -283,7 +283,7 @@ export function PerformanceAnalytics() {
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #2A2A2A' }}>
+                <tr style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
                   {['Rank','Employee','Dept','KPI Score','Attendance %','Tasks Done','Score'].map(col => (
                     <th key={col} style={{ padding: '10px 12px', textAlign: 'left', color: '#4B5563', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{col}</th>
                   ))}
@@ -293,16 +293,16 @@ export function PerformanceAnalytics() {
                 {leaderboard.slice(0, 10).map((emp, idx) => {
                   const rankStyle = idx < 3 ? RANK_STYLES[idx] : null
                   return (
-                    <tr key={emp.id} style={{ borderBottom: '1px solid #2A2A2A', borderLeft: rankStyle ? `3px solid ${rankStyle.border}` : '3px solid transparent' }}>
+                    <tr key={emp.id} style={{ borderBottom: '1px solid var(--gp-border-light)', borderLeft: rankStyle ? `3px solid ${rankStyle.border}` : '3px solid transparent' }}>
                       <td style={{ padding: '12px 12px', color: idx < 3 ? RANK_STYLES[idx].border : '#9CA3AF', fontWeight: '700' }}>
                         {rankStyle ? rankStyle.label : `#${idx + 1}`}
                       </td>
-                      <td style={{ padding: '12px 12px', color: '#FFFFFF', fontWeight: '500' }}>{emp.name}</td>
+                      <td style={{ padding: '12px 12px', color: 'var(--gp-black)', fontWeight: '500' }}>{emp.name}</td>
                       <td style={{ padding: '12px 12px', color: '#9CA3AF' }}>{emp.dept}</td>
                       <td style={{ padding: '12px 12px', color: "var(--gp-blue)" }}>{emp.kpi}</td>
                       <td style={{ padding: '12px 12px', color: '#10B981' }}>{emp.attRate}%</td>
                       <td style={{ padding: '12px 12px', color: '#F59E0B' }}>{emp.tasksDone}</td>
-                      <td style={{ padding: '12px 12px', color: '#FFFFFF', fontWeight: '700' }}>{emp.score}</td>
+                      <td style={{ padding: '12px 12px', color: 'var(--gp-black)', fontWeight: '700' }}>{emp.score}</td>
                     </tr>
                   )
                 })}
@@ -311,8 +311,8 @@ export function PerformanceAnalytics() {
           </div>
 
           {/* Individual Comparison */}
-          <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
-            <h3 style={{ color: '#FFFFFF', margin: '0 0 8px', fontSize: '16px', fontWeight: '600' }}>Individual Comparison</h3>
+          <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
+            <h3 style={{ color: 'var(--gp-black)', margin: '0 0 8px', fontSize: '16px', fontWeight: '600' }}>Individual Comparison</h3>
             <p style={{ color: '#4B5563', fontSize: '13px', marginBottom: '16px' }}>Select up to 4 employees to compare on radar chart</p>
 
             {/* Employee Multi-select */}
@@ -333,7 +333,7 @@ export function PerformanceAnalytics() {
             </div>
 
             {selectedEmployees.length < 2 ? (
-              <div style={{ color: '#4B5563', textAlign: 'center', padding: '60px', border: '1px dashed #2A2A2A' }}>
+              <div style={{ color: '#4B5563', textAlign: 'center', padding: '60px', border: '1px dashed var(--gp-border-light)' }}>
                 Select at least 2 employees to see comparison
               </div>
             ) : (
@@ -350,7 +350,7 @@ export function PerformanceAnalytics() {
                     ) : null
                   })}
                   <Legend wrapperStyle={{ color: '#9CA3AF', fontSize: 12 }} />
-                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', color: '#FFFFFF', borderRadius: 0 }} />
+                  <Tooltip contentStyle={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', color: 'var(--gp-black)', borderRadius: 0 }} />
                 </RadarChart>
               </ResponsiveContainer>
             )}

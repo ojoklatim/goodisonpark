@@ -119,15 +119,15 @@ export function ExportCenter() {
       <PageHeader title="Report Export Center" />
 
       {/* Report Definitions Table */}
-      <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px', marginBottom: '24px' }}>
+      <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
           <FileText size={18} color="var(--gp-blue)" />
-          <h3 style={{ color: '#FFFFFF', margin: 0, fontSize: '16px', fontWeight: '600' }}>Available Reports</h3>
+          <h3 style={{ color: 'var(--gp-black)', margin: 0, fontSize: '16px', fontWeight: '600' }}>Available Reports</h3>
         </div>
 
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid #2A2A2A' }}>
+            <tr style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
               {['Report Name','Type','Description','Schedule','Actions'].map(col => (
                 <th key={col} style={{ padding: '10px 12px', textAlign: 'left', color: '#4B5563', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{col}</th>
               ))}
@@ -138,11 +138,11 @@ export function ExportCenter() {
               const isGenerating = generatingId === report.name
               const wasGenerated = generatedIds.includes(report.name)
               return (
-                <tr key={idx} style={{ borderBottom: '1px solid #2A2A2A' }}>
+                <tr key={idx} style={{ borderBottom: '1px solid var(--gp-border-light)' }}>
                   <td style={{ padding: '14px 12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <FileText size={16} color="#4B5563" />
-                      <span style={{ color: '#FFFFFF', fontWeight: '500' }}>{report.name}</span>
+                      <span style={{ color: 'var(--gp-black)', fontWeight: '500' }}>{report.name}</span>
                       {wasGenerated && <CheckCircle size={14} color="#10B981" />}
                     </div>
                   </td>
@@ -193,14 +193,14 @@ export function ExportCenter() {
                           padding: '7px 14px',
                           background: "var(--gp-card)",
                           color: '#9CA3AF',
-                          border: '1px solid #2A2A2A',
+                          border: '1px solid var(--gp-border-light)',
                           borderRadius: '0px',
                           cursor: 'pointer',
                           fontWeight: '500',
                           fontSize: '13px',
                           transition: 'color 0.2s'
                         }}
-                        onMouseOver={e => { e.currentTarget.style.color = '#FFFFFF'; e.currentTarget.style.borderColor = "var(--gp-blue)" }}
+                        onMouseOver={e => { e.currentTarget.style.color = 'var(--gp-black)'; e.currentTarget.style.borderColor = "var(--gp-blue)" }}
                         onMouseOut={e => { e.currentTarget.style.color = '#9CA3AF'; e.currentTarget.style.borderColor = "var(--gp-border-light)" }}
                       >
                         <Download size={13} /> Download CSV
@@ -215,16 +215,16 @@ export function ExportCenter() {
       </div>
 
       {/* Recently Generated */}
-      <div style={{ background: "var(--gp-card)", border: '1px solid #2A2A2A', padding: '20px' }}>
+      <div style={{ background: "var(--gp-card)", border: '1px solid var(--gp-border-light)', padding: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
           <Clock size={18} color="#F59E0B" />
-          <h3 style={{ color: '#FFFFFF', margin: 0, fontSize: '16px', fontWeight: '600' }}>Recently Generated</h3>
+          <h3 style={{ color: 'var(--gp-black)', margin: 0, fontSize: '16px', fontWeight: '600' }}>Recently Generated</h3>
         </div>
 
         {docsLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}><Spinner /></div>
         ) : recentDocs.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#4B5563', border: '1px dashed #2A2A2A' }}>
+          <div style={{ textAlign: 'center', padding: '40px', color: '#4B5563', border: '1px dashed var(--gp-border-light)' }}>
             <FileText size={32} style={{ marginBottom: '12px', opacity: 0.4 }} />
             <p style={{ margin: 0 }}>No reports generated yet. Click 'Generate Now' on any report above.</p>
           </div>
@@ -235,7 +235,7 @@ export function ExportCenter() {
                 display: 'flex', alignItems: 'center', gap: '14px',
                 padding: '14px 16px',
                 background: idx % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
-                border: '1px solid #2A2A2A',
+                border: '1px solid var(--gp-border-light)',
                 transition: 'background 0.2s'
               }}
                 onMouseOver={e => e.currentTarget.style.background = 'rgba(56,189,248,0.05)'}
@@ -245,7 +245,7 @@ export function ExportCenter() {
                   <FileText size={16} color="var(--gp-blue)" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ color: '#FFFFFF', fontWeight: '500', fontSize: '14px' }}>{doc.name}</div>
+                  <div style={{ color: 'var(--gp-black)', fontWeight: '500', fontSize: '14px' }}>{doc.name}</div>
                   <div style={{ color: '#4B5563', fontSize: '12px', marginTop: '2px' }}>{formatDate(doc.created_at)}</div>
                 </div>
                 <button

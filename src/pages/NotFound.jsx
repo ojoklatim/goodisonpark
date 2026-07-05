@@ -57,7 +57,7 @@ export function NotFound() {
             padding: '10px 24px',
             background: 'transparent',
             color: '#9CA3AF',
-            border: '1px solid #2A2A2A',
+            border: '1px solid var(--gp-border-light)',
             fontFamily: 'Inter, sans-serif',
             fontWeight: 500,
             fontSize: 14,
