@@ -451,6 +451,19 @@ CREATE TABLE sops (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- events (calendar)
+CREATE TABLE events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+  created_by UUID REFERENCES profiles(id),
+  title TEXT NOT NULL,
+  description TEXT,
+  starts_at TIMESTAMPTZ,
+  ends_at TIMESTAMPTZ,
+  attendees UUID[] DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ### HR
 
 -- leave_requests

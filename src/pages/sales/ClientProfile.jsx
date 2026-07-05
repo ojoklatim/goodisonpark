@@ -34,10 +34,6 @@ export function ClientProfile() {
   const { data: deals = [] } = useQuery({
     queryKey: ['client_deals', id],
     queryFn: async () => {
-      const { data, error } = await insforge.from('deals').select('*').eq('client_id', id)
-      // Note: the schema links deals via lead_id usually, but a client is converted from a lead.
-      // Wait, let's query deals by lead_id if client doesn't have a direct relationship, 
-      // or we just query deals where lead_id = client.lead_id
       const { data: dealsData, error: dealsErr } = await insforge.from('deals').select('*').eq('lead_id', client?.lead_id)
       if (dealsErr) throw dealsErr
       return dealsData || []

@@ -36,7 +36,7 @@ export function Calendar() {
         .from('events')
         .select('*')
         .eq('company_id', company?.id)
-      if (error && error.code !== '42P01') throw error // ignore undefined table error
+      if (error) throw error
       return data || []
     },
     enabled: !!company?.id

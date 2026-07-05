@@ -34,7 +34,7 @@ export function OperationsAnalytics() {
     queryKey: ['projects-ops', company?.id],
     enabled: !!company?.id,
     queryFn: async () => {
-      const { data } = await insforge.from('projects').select('id, status, department_id, start_date, end_date, created_at').eq('company_id', company.id)
+      const { data } = await insforge.from('projects').select('id, status, department_id, start_date, due_date, created_at').eq('company_id', company.id)
       return data || []
     }
   })

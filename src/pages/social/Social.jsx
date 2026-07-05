@@ -126,21 +126,21 @@ export function Social() {
   const latestFollowers = useMemo(() => {
     if (!last30.length) return 0
     const sorted = [...last30].sort((a, b) => b.date.localeCompare(a.date))
-    return sorted[0]?.followers || 0
+    return sorted[0]?.followers_count || 0
   }, [last30])
 
   const totalEngagements = useMemo(
     () => last30.reduce((s, m) => s + (m.likes || 0) + (m.comments || 0) + (m.shares || 0), 0),
     [last30]
   )
-  const totalViews = useMemo(() => last30.reduce((s, m) => s + (m.views_count || 0), 0), [last30])
+  const totalViews = useMemo(() => last30.reduce((s, m) => s + (m.views || 0), 0), [last30])
   const totalPosts = last30.length
 
   // Growth chart data (followers last 30 days)
   const growthData = useMemo(() => {
     const byDate = {}
     last30.forEach((m) => {
-      if (!byDate[m.date] || m.followers > byDate[m.date]) byDate[m.date] = m.followers
+      if (!byDate[m.date] || m.followers_count > byDate[m.date]) byDate[m.date] = m.followers_count
     })
     return Object.entries(byDate)
       .sort(([a], [b]) => a.localeCompare(b))
@@ -170,7 +170,7 @@ export function Social() {
     metrics.forEach((m) => {
       if (!byDate[m.date]) byDate[m.date] = { date: m.date.slice(5) }
       const pName = PLATFORM_NAME_MAP[m.platform] || m.platform
-      byDate[m.date][pName] = (byDate[m.date][pName] || 0) + (m.followers || 0)
+      byDate[m.date][pName] = (byDate[m.date][pName] || 0) + (m.followers_count || 0)
     })
     return Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date))
   }, [metrics])
@@ -179,7 +179,7 @@ export function Social() {
   const followerGrowth = useMemo(() => {
     const sorted = [...last30].sort((a, b) => a.date.localeCompare(b.date))
     if (sorted.length < 2) return 0
-    return (sorted[sorted.length - 1]?.followers || 0) - (sorted[0]?.followers || 0)
+    return (sorted[sorted.length - 1]?.followers_count || 0) - (sorted[0]?.followers_count || 0)
   }, [last30])
 
   const bestDay = useMemo(() => {
@@ -201,10 +201,9 @@ export function Social() {
       const { error } = await insforge.from('social_media_metrics').insert([
         {
           company_id: company?.id,
-          platform: form.platform,
           date: form.date,
-          followers: Number(form.followers) || 0,
-          views_count: Number(form.views_count) || 0,
+          followers_count: Number(form.followers) || 0,
+          views: Number(form.views_count) || 0,
           likes: Number(form.likes) || 0,
           comments: Number(form.comments) || 0,
           shares: Number(form.shares) || 0,
@@ -227,8 +226,8 @@ export function Social() {
     const rows = filteredMetrics.map((m) => [
       m.date,
       m.platform,
-      m.followers,
-      m.views_count,
+      m.followers_count,
+      m.views,
       m.likes,
       m.comments,
       m.shares,
@@ -603,8 +602,8 @@ export function Social() {
                 <td style={{ padding: '10px 16px', color: 'var(--gp-black)', fontWeight: 500 }}>
                   {PLATFORM_NAME_MAP[m.platform] || m.platform}
                 </td>
-                <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.followers || 0).toLocaleString()}</td>
-                <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.views_count || 0).toLocaleString()}</td>
+                <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.followers_count || 0).toLocaleString()}</td>
+                <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.views || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.likes || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.comments || 0).toLocaleString()}</td>
                 <td style={{ padding: '10px 16px', color: 'var(--gp-black)' }}>{(m.shares || 0).toLocaleString()}</td>
