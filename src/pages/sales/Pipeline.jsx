@@ -51,7 +51,7 @@ function getDateRange(filter, customFrom, customTo) {
 }
 
 export function Pipeline() {
-  const { company } = useAuth()
+  const { company, role, profile } = useAuth()
   const queryClient = useQueryClient()
 
   const [search, setSearch] = useState('')
@@ -64,13 +64,18 @@ export function Pipeline() {
 
   // Fetch Deals — reflects leads collected/worked by agents
   const { data: deals = [], isLoading } = useQuery({
-    queryKey: ['deals', company?.id],
+    queryKey: ['deals', company?.id, role, profile?.id],
     queryFn: async () => {
-      const { data, error } = await insforge
+      let query = insforge
         .from('deals')
         .select(`*, profiles!deals_assigned_to_fkey(id, first_name, last_name), leads(id, first_name, last_name, company_name, email, phone)`)
         .eq('company_id', company?.id)
-        .order('created_at', { ascending: false })
+      
+      if (role === 'employee') {
+        query = query.eq('assigned_to', profile?.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
       if (error) throw error
       return data || []
     },
@@ -79,9 +84,13 @@ export function Pipeline() {
 
   // Fetch Leads for the New Deal form
   const { data: leads = [] } = useQuery({
-    queryKey: ['leads', company?.id],
+    queryKey: ['leads', company?.id, role, profile?.id],
     queryFn: async () => {
-      const { data, error } = await insforge.from('leads').select('id, first_name, last_name, company_name').eq('company_id', company?.id)
+      let query = insforge.from('leads').select('id, first_name, last_name, company_name').eq('company_id', company?.id)
+      if (role === 'employee') {
+        query = query.eq('assigned_to', profile?.id)
+      }
+      const { data, error } = await query
       if (error) throw error
       return data || []
     },
@@ -105,11 +114,15 @@ export function Pipeline() {
 
   const createDeal = useMutation({
     mutationFn: async (newData) => {
-      const { error } = await insforge.from('deals').insert([{ ...newData, company_id: company.id }])
+      const payload = { ...newData, company_id: company.id }
+      if (role === 'employee') {
+        payload.assigned_to = profile?.id
+      }
+      const { error } = await insforge.from('deals').insert([payload])
       if (error) throw error
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['deals', company?.id])
+      queryClient.invalidateQueries({ queryKey: ['deals', company?.id] })
       setIsNewDealOpen(false)
       setNewDealForm({ title: '', lead_id: '', stage: 'new_lead', value: '', currency: 'UGX', expected_close_date: '', probability: 50, assigned_to: '', notes: '' })
     }

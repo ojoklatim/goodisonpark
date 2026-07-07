@@ -10,14 +10,14 @@ import { useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 
 export function Quotations() {
-  const { company } = useAuth()
+  const { company, role, profile } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const { data: quotations = [], isLoading } = useQuery({
-    queryKey: ['quotations', company?.id],
+    queryKey: ['quotations', company?.id, role, profile?.id],
     queryFn: async () => {
-      const { data, error } = await insforge
+      let query = insforge
         .from('quotations')
         .select(`
           *,
@@ -26,7 +26,12 @@ export function Quotations() {
           profiles(first_name, last_name)
         `)
         .eq('company_id', company?.id)
-        .order('created_at', { ascending: false })
+      
+      if (role === 'employee') {
+        query = query.eq('created_by', profile?.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
       if (error) throw error
       return data
     },
@@ -39,7 +44,7 @@ export function Quotations() {
       if (error) throw error
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['quotations', company?.id])
+      queryClient.invalidateQueries({ queryKey: ['quotations', company?.id] })
     }
   })
 

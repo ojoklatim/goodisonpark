@@ -18,7 +18,7 @@ export function InvoiceForm() {
   const [searchParams] = useSearchParams()
   const fromQuotationId = searchParams.get('from_quotation')
   const isNew = !id || id === 'new'
-  const { company, profile } = useAuth()
+  const { company, role, profile } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const printRef = useRef(null)
@@ -210,7 +210,20 @@ export function InvoiceForm() {
     }
   }
 
+  const isAdminOrManager = role !== 'employee'
+  const isOwner = isNew || invoice?.created_by === profile?.id
+
   if (invLoading) return <div>Loading...</div>
+  if (!isNew && !invoice) return <div>Invoice not found.</div>
+  if (!isAdminOrManager && !isOwner) {
+    return (
+      <div style={{ padding: '24px', textAlign: 'center', color: 'var(--gp-muted)' }}>
+        <h3>Access Denied</h3>
+        <p>You do not have permission to view or edit this invoice.</p>
+        <Button onClick={() => navigate('/dashboard/sales/invoices')}>Back to Invoices List</Button>
+      </div>
+    )
+  }
 
   const today = format(new Date(), 'dd MMMM yyyy')
 

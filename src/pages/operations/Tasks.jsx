@@ -13,7 +13,7 @@ import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
 
 export function Tasks() {
-  const { company, user } = useAuth()
+  const { company, user, role, profile } = useAuth()
   const queryClient = useQueryClient()
   const [showModal, setShowModal] = useState(false)
   const [editingTaskId, setEditingTaskId] = useState(null)
@@ -24,9 +24,9 @@ export function Tasks() {
   })
 
   const { data: tasks = [], isLoading: loadingTasks } = useQuery({
-    queryKey: ['tasks', company?.id],
+    queryKey: ['tasks', company?.id, role, profile?.id],
     queryFn: async () => {
-      const { data, error } = await insforge
+      let query = insforge
         .from('tasks')
         .select(`
           *,
@@ -34,7 +34,12 @@ export function Tasks() {
           assignee:profiles!assigned_to(first_name, last_name)
         `)
         .eq('company_id', company?.id)
-        .order('created_at', { ascending: false })
+      
+      if (role === 'employee') {
+        query = query.eq('assigned_to', profile?.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
       if (error) throw error
       return data
     },
@@ -75,7 +80,7 @@ export function Tasks() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['tasks', company?.id])
+      queryClient.invalidateQueries({ queryKey: ['tasks', company?.id] })
       setShowModal(false)
       setEditingTaskId(null)
       setFormData({ title: '', description: '', project_id: '', assigned_to: '', priority: 'medium', status: 'todo', due_date: '', estimated_hours: '' })
@@ -90,7 +95,7 @@ export function Tasks() {
       company_id: company.id,
       assigned_by: user.id,
       project_id: formData.project_id || null,
-      assigned_to: formData.assigned_to || null,
+      assigned_to: role === 'employee' ? profile?.id : (formData.assigned_to || null),
       priority: formData.priority,
       status: formData.status,
       due_date: formData.due_date || null,
@@ -162,7 +167,9 @@ export function Tasks() {
 
       <div style={{ display: 'flex', gap: '16px', marginTop: '24px', marginBottom: '24px', alignItems: 'center' }}>
         <div style={{ width: '150px' }}><Select options={[{value: 'all', label: 'All Projects'}]} defaultValue="all" /></div>
-        <div style={{ width: '150px' }}><Select options={[{value: 'all', label: 'All Assignees'}]} defaultValue="all" /></div>
+        {role !== 'employee' && (
+          <div style={{ width: '150px' }}><Select options={[{value: 'all', label: 'All Assignees'}]} defaultValue="all" /></div>
+        )}
         <div style={{ width: '150px' }}><Select options={[{value: 'all', label: 'All Statuses'}]} defaultValue="all" /></div>
       </div>
 
@@ -197,14 +204,16 @@ export function Tasks() {
                 options={[{value: '', label: '-- None --'}, ...projects.map(p => ({value: p.id, label: p.name}))]} 
               />
             </div>
-            <div style={{ flex: 1 }}>
-              <Select 
-                label="Assigned To" 
-                value={formData.assigned_to} 
-                onChange={e => setFormData({...formData, assigned_to: e.target.value})}
-                options={[{value: '', label: '-- None --'}, ...profiles.map(p => ({value: p.id, label: `${p.first_name} ${p.last_name}`}))]} 
-              />
-            </div>
+            {role !== 'employee' && (
+              <div style={{ flex: 1 }}>
+                <Select 
+                  label="Assigned To" 
+                  value={formData.assigned_to} 
+                  onChange={e => setFormData({...formData, assigned_to: e.target.value})}
+                  options={[{value: '', label: '-- None --'}, ...profiles.map(p => ({value: p.id, label: `${p.first_name} ${p.last_name}`}))]} 
+                />
+              </div>
+            )}
           </div>
           
           <div style={{ display: 'flex', gap: '16px' }}>

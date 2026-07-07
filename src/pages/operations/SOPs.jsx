@@ -11,7 +11,7 @@ import { Input, Textarea } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 
 export function SOPs() {
-  const { company, user } = useAuth()
+  const { company, user, role } = useAuth()
   const queryClient = useQueryClient()
   const [showModal, setShowModal] = useState(false)
   const [editingSOPId, setEditingSOPId] = useState(null)
@@ -139,7 +139,9 @@ export function SOPs() {
       cell: (info) => (
         <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           <button onClick={() => setViewSOPModal({ show: true, sop: info.row.original })} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
-          <button onClick={() => handleEditClick(info.row.original)} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>Edit</button>
+          {role !== 'employee' && (
+            <button onClick={() => handleEditClick(info.row.original)} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>Edit</button>
+          )}
         </div>
       )
     }
@@ -150,7 +152,7 @@ export function SOPs() {
       <PageHeader 
         title="Standard Operating Procedures (SOPs)" 
         subtitle="Manage company guidelines and workflows"
-        action={<Button variant="primary" onClick={() => setShowModal(true)}>New SOP</Button>}
+        action={role !== 'employee' && <Button variant="primary" onClick={() => setShowModal(true)}>New SOP</Button>}
       />
 
       <div style={{ marginTop: '24px' }}>
@@ -197,13 +199,15 @@ export function SOPs() {
               <div style={{ fontSize: '13px', color: '#6B7280' }}>
                 Last reviewed: {viewSOPModal.sop.last_reviewed_at ? new Date(viewSOPModal.sop.last_reviewed_at).toLocaleDateString() : 'Never'}
               </div>
-              <Button 
-                variant="primary" 
-                onClick={() => markReviewed.mutate(viewSOPModal.sop.id)}
-                disabled={markReviewed.isPending}
-              >
-                {markReviewed.isPending ? 'Processing...' : 'Mark as Reviewed'}
-              </Button>
+              {role !== 'employee' && (
+                <Button 
+                  variant="primary" 
+                  onClick={() => markReviewed.mutate(viewSOPModal.sop.id)}
+                  disabled={markReviewed.isPending}
+                >
+                  {markReviewed.isPending ? 'Processing...' : 'Mark as Reviewed'}
+                </Button>
+              )}
             </div>
           </div>
         )}

@@ -19,7 +19,7 @@ function fmt(s) {
 
 export function Attendance() {
   const { company, user, profile, role } = useAuth()
-  const isManager = role === 'company_admin' || role === 'manager'
+  const isManager = role !== 'employee'
   const queryClient = useQueryClient()
   const [showBulkModal, setShowBulkModal] = useState(false)
   const [bulkDate, setBulkDate] = useState(new Date().toISOString().split('T')[0])

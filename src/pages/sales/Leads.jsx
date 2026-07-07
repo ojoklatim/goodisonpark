@@ -35,13 +35,18 @@ export function Leads() {
 
   // Queries
   const { data: leads = [], isLoading } = useQuery({
-    queryKey: ['leads', company?.id],
+    queryKey: ['leads', company?.id, role, profile?.id],
     queryFn: async () => {
-      const { data, error } = await insforge
+      let query = insforge
         .from('leads')
         .select(`*, profiles!leads_assigned_to_fkey(first_name, last_name)`)
         .eq('company_id', company?.id)
-        .order('created_at', { ascending: false })
+      
+      if (role === 'employee') {
+        query = query.eq('assigned_to', profile?.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
       if (error) throw error
       return data
     },
@@ -62,6 +67,9 @@ export function Leads() {
     mutationFn: async (newData) => {
       // Ensure empty string assigned_to becomes null for the UUID column
       const payload = { ...newData, assigned_to: newData.assigned_to || null };
+      if (role === 'employee') {
+        payload.assigned_to = profile?.id
+      }
       if (editingLead) {
         const { error } = await insforge.from('leads').update(payload).eq('id', editingLead.id)
         if (error) throw error

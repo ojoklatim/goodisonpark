@@ -95,12 +95,18 @@ export function Sidebar() {
     const items = group.items.filter(item => {
       if (isAdmin) return true
       
-      // Limit navigation items for employees
+      if (profile?.role === 'employee') {
+        if (group.section === 'Sales' && !['Leads', 'Clients', 'Quotations', 'Invoices'].includes(item.label)) return false
+        if (group.section === 'Operations' && !['SOPs', 'Tasks'].includes(item.label)) return false
+        if (group.section === 'People' && item.label !== 'Leave') return false
+        if (group.section === 'Communications' && item.label !== 'Messages') return false
+        if (group.section === 'Analytics') return false
+        return true
+      }
 
       if (group.section === 'People' && !['Leave', 'Attendance', 'Daily Activity'].includes(item.label)) return false
       if (group.section === 'Operations' && item.label === 'Approvals') return false
       if (group.section === 'Analytics') return false
-
       
       return true
     })
@@ -108,10 +114,9 @@ export function Sidebar() {
   }).filter(group => {
     if (group.items.length === 0) return false
     if (group.section === 'Overview') return true
-    if (group.section === 'Sales') return can('sales', 'view')
-    if (group.section === 'Operations') return can('operations', 'view')
-    if (group.section === 'People') return can('hr', 'view')
-
+    if (group.section === 'Sales') return can('sales', 'view') || profile?.role === 'employee'
+    if (group.section === 'Operations') return can('operations', 'view') || profile?.role === 'employee'
+    if (group.section === 'People') return can('hr', 'view') || profile?.role === 'employee'
     if (group.section === 'Analytics') return can('reports', 'view')
     if (group.section === 'Communications') return true
     return true

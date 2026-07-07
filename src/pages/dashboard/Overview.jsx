@@ -20,16 +20,31 @@ const COLORS = {
 }
 
 export function Overview() {
-  const { company, role } = useAuth()
+  const { company, role, profile } = useAuth()
   const companyId = company?.id
   const queryClient = useQueryClient()
 
   // 1. Fetch Stats
   const { data: stats, isLoading: loadingStats } = useQuery({
-    queryKey: ['dashboard_stats', companyId],
+    queryKey: ['dashboard_stats', companyId, role, profile?.id],
     queryFn: async () => {
       if (!companyId) return null
       
+      if (role === 'employee') {
+        const [leadsRes, tasksRes, dealsRes, invoicesRes] = await Promise.all([
+          insforge.from('leads').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('assigned_to', profile?.id),
+          insforge.from('tasks').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('assigned_to', profile?.id),
+          insforge.from('deals').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('assigned_to', profile?.id),
+          insforge.from('invoices').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('created_by', profile?.id)
+        ])
+        return {
+          leads: leadsRes.count || 0,
+          tasks: tasksRes.count || 0,
+          deals: dealsRes.count || 0,
+          invoices: invoicesRes.count || 0
+        }
+      }
+
       const [profilesRes, projectsRes, dealsRes, invoicesRes, approvalsRes] = await Promise.all([
         insforge.from('profiles').select('*', { count: 'exact', head: true }).eq('company_id', companyId),
         insforge.from('projects').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'active'),
@@ -191,13 +206,22 @@ export function Overview() {
       <CheckInWidget />
       
       {/* STATS ROW */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-        <StatCard title="Total Employees" value={stats?.employees || 0} icon={<Users size={20} />} loading={loadingStats} />
-        <StatCard title="Active Projects" value={stats?.activeProjects || 0} icon={<Briefcase size={20} />} loading={loadingStats} />
-        <StatCard title="Open Deals" value={stats?.openDeals || 0} icon={<FileText size={20} />} loading={loadingStats} />
-        <StatCard title="Revenue (MTD)" value={`UGX ${stats?.revenueMTD?.toLocaleString() || 0}`} icon={<DollarSign size={20} />} loading={loadingStats} />
-        <StatCard title="Pending Approvals" value={stats?.pendingApprovals || 0} icon={<Clock size={20} />} loading={loadingStats} />
-      </div>
+      {isManager ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+          <StatCard title="Total Employees" value={stats?.employees || 0} icon={<Users size={20} />} loading={loadingStats} />
+          <StatCard title="Active Projects" value={stats?.activeProjects || 0} icon={<Briefcase size={20} />} loading={loadingStats} />
+          <StatCard title="Open Deals" value={stats?.openDeals || 0} icon={<FileText size={20} />} loading={loadingStats} />
+          <StatCard title="Revenue (MTD)" value={`UGX ${stats?.revenueMTD?.toLocaleString() || 0}`} icon={<DollarSign size={20} />} loading={loadingStats} />
+          <StatCard title="Pending Approvals" value={stats?.pendingApprovals || 0} icon={<Clock size={20} />} loading={loadingStats} />
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+          <StatCard title="My Assigned Leads" value={stats?.leads || 0} icon={<Users size={20} />} loading={loadingStats} />
+          <StatCard title="My Open Deals" value={stats?.deals || 0} icon={<Briefcase size={20} />} loading={loadingStats} />
+          <StatCard title="My Invoices" value={stats?.invoices || 0} icon={<FileText size={20} />} loading={loadingStats} />
+          <StatCard title="My Assigned Tasks" value={stats?.tasks || 0} icon={<CheckCircle size={20} />} loading={loadingStats} />
+        </div>
+      )}
 
       {isManager ? (
         <>

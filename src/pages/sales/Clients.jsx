@@ -10,23 +10,28 @@ import { useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
 
 export function Clients() {
-  const { company } = useAuth()
+  const { company, role, profile } = useAuth()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
 
   const { data: clients = [], isLoading } = useQuery({
-    queryKey: ['clients', company?.id],
+    queryKey: ['clients', company?.id, role, profile?.id],
     queryFn: async () => {
       // Get clients
       const { data: clientsData, error: clientsError } = await insforge
         .from('clients')
-        .select('*')
+        .select('*, leads!lead_id(assigned_to)')
         .eq('company_id', company?.id)
         .order('created_at', { ascending: false })
       if (clientsError) throw clientsError
 
+      let filteredData = clientsData || []
+      if (role === 'employee') {
+        filteredData = filteredData.filter(c => c.leads?.assigned_to === profile?.id)
+      }
+
       // Get deals for these clients (via lead_id)
-      const leadIds = clientsData.map(c => c.lead_id).filter(Boolean)
+      const leadIds = filteredData.map(c => c.lead_id).filter(Boolean)
       let dealsData = []
       if (leadIds.length > 0) {
         const { data: deals, error: dealsError } = await insforge
@@ -38,7 +43,7 @@ export function Clients() {
       }
 
       // Map deals count to clients
-      return clientsData.map(client => {
+      return filteredData.map(client => {
         const clientDeals = dealsData.filter(d => d.lead_id === client.lead_id)
         return {
           ...client,

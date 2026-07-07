@@ -13,7 +13,7 @@ import { format, isPast } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 
 export function Invoices() {
-  const { company, user } = useAuth()
+  const { company, role, profile } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [selectedInvoice, setSelectedInvoice] = useState(null)
@@ -21,13 +21,18 @@ export function Invoices() {
   const [paymentData, setPaymentData] = useState({ amount: '', date: new Date().toISOString().split('T')[0], method: 'Bank Transfer', reference: '' })
 
   const { data: invoices = [], isLoading } = useQuery({
-    queryKey: ['invoices', company?.id],
+    queryKey: ['invoices', company?.id, role, profile?.id],
     queryFn: async () => {
-      const { data, error } = await insforge
+      let query = insforge
         .from('invoices')
         .select(`*, clients(name)`)
         .eq('company_id', company?.id)
-        .order('created_at', { ascending: false })
+      
+      if (role === 'employee') {
+        query = query.eq('created_by', profile?.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
       if (error) throw error
       
       // Auto-mark overdue

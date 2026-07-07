@@ -18,7 +18,7 @@ Payment may be made by bank transfer, mobile money, or cheque.`
 export function QuotationForm() {
   const { id } = useParams()
   const isNew = !id || id === 'new'
-  const { company, profile } = useAuth()
+  const { company, role, profile } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const queryClient = useQueryClient()
@@ -160,7 +160,7 @@ export function QuotationForm() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['quotations', company?.id])
+      queryClient.invalidateQueries({ queryKey: ['quotations', company?.id] })
       navigate('/dashboard/sales/quotations')
     }
   })
@@ -198,7 +198,20 @@ export function QuotationForm() {
     }
   }
 
+  const isAdminOrManager = role !== 'employee'
+  const isOwner = isNew || quotation?.created_by === profile?.id
+
   if (qLoading) return <div>Loading...</div>
+  if (!isNew && !quotation) return <div>Quotation not found.</div>
+  if (!isAdminOrManager && !isOwner) {
+    return (
+      <div style={{ padding: '24px', textAlign: 'center', color: 'var(--gp-muted)' }}>
+        <h3>Access Denied</h3>
+        <p>You do not have permission to view or edit this quotation.</p>
+        <Button onClick={() => navigate('/dashboard/sales/quotations')}>Back to Quotations List</Button>
+      </div>
+    )
+  }
 
   const today = format(new Date(), 'dd MMMM yyyy')
 
