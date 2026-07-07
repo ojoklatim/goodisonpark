@@ -7,7 +7,7 @@ import {
   CreditCard, PieChart, LineChart, LayoutDashboard,
   MessageSquare, Megaphone, Share2, Bell, SlidersHorizontal,
   Activity, Download, BarChart2,
-  Settings, UserCog, LogOut, ChevronRight, X,
+  Settings, UserCog, LogOut, ChevronRight, X, Network
 } from 'lucide-react'
 import { insforge } from '../../lib/insforge'
 import { useAuthStore } from '../../store/authStore'
@@ -38,8 +38,8 @@ const NAV = [
       { label: 'Projects', icon: FolderOpen, to: '/dashboard/operations/projects' },
       { label: 'Tasks', icon: CheckSquare, to: '/dashboard/operations/tasks' },
       { label: 'Approvals', icon: ClipboardCheck, to: '/dashboard/operations/approvals' },
-      { label: 'Documents', icon: File, to: '/dashboard/operations/documents' },
       { label: 'SOPs', icon: BookOpen, to: '/dashboard/operations/sops' },
+      { label: 'Departments', icon: Network, to: '/dashboard/operations/departments' },
     ],
   },
   {
@@ -48,21 +48,10 @@ const NAV = [
       { label: 'Employees', icon: Users2, to: '/dashboard/employees' },
       { label: 'Attendance', icon: CalendarCheck, to: '/dashboard/hr/attendance' },
       { label: 'Daily Activity', icon: Activity, to: '/dashboard/hr/activity' },
-      { label: 'Performance', icon: BarChart3, to: '/dashboard/performance' },
       { label: 'Leave', icon: Umbrella, to: '/dashboard/hr/leave' },
-      { label: 'Payroll', icon: Wallet, to: '/dashboard/hr/payroll' },
-      { label: 'Training', icon: GraduationCap, to: '/dashboard/hr/training' },
     ],
   },
-  {
-    section: 'Finance',
-    items: [
-      { label: 'Overview', icon: LayoutDashboard, to: '/dashboard/finance' },
-      { label: 'Expenses', icon: CreditCard, to: '/dashboard/finance/expenses' },
-      { label: 'Budgets', icon: PieChart, to: '/dashboard/finance/budgets' },
-      { label: 'Reports', icon: LineChart, to: '/dashboard/finance/reports' },
-    ],
-  },
+
   {
     section: 'Analytics',
     items: [
@@ -76,10 +65,7 @@ const NAV = [
     section: 'Communications',
     items: [
       { label: 'Messages', icon: MessageSquare, to: '/dashboard/messages' },
-      { label: 'Notifications', icon: Bell, to: '/dashboard/notifications' },
       { label: 'Announcements', icon: Megaphone, to: '/dashboard/hr/announcements' },
-      { label: 'Social Media', icon: Share2, to: '/dashboard/social' },
-      { label: 'Social Settings', icon: SlidersHorizontal, to: '/dashboard/social/settings' },
     ],
   },
 ]
@@ -87,6 +73,7 @@ const NAV = [
 const BOTTOM_NAV = [
   { label: 'Company Settings', icon: Settings, to: '/dashboard/company/settings' },
   { label: 'User Management', icon: UserCog, to: '/dashboard/company/users' },
+  { label: 'Branches', icon: Building2, to: '/dashboard/company/branches' },
 ]
 
 export function Sidebar() {
@@ -109,11 +96,11 @@ export function Sidebar() {
       if (isAdmin) return true
       
       // Limit navigation items for employees
-      if (group.section === 'Finance' && item.label !== 'Expenses') return false
-      if (group.section === 'People' && !['Leave', 'Training', 'Attendance', 'Daily Activity'].includes(item.label)) return false
+
+      if (group.section === 'People' && !['Leave', 'Attendance', 'Daily Activity'].includes(item.label)) return false
       if (group.section === 'Operations' && item.label === 'Approvals') return false
       if (group.section === 'Analytics') return false
-      if (group.section === 'Communications' && ['Social Media', 'Social Settings'].includes(item.label)) return false
+
       
       return true
     })
@@ -124,9 +111,9 @@ export function Sidebar() {
     if (group.section === 'Sales') return can('sales', 'view')
     if (group.section === 'Operations') return can('operations', 'view')
     if (group.section === 'People') return can('hr', 'view')
-    if (group.section === 'Finance') return can('finance', 'view')
+
     if (group.section === 'Analytics') return can('reports', 'view')
-    if (group.section === 'Communications') return can('communications', 'view')
+    if (group.section === 'Communications') return true
     return true
   })
 

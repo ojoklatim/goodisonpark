@@ -7,13 +7,14 @@ import { DataTable } from '../../components/ui/DataTable'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
-import { Input } from '../../components/ui/Input'
+import { Input, Textarea } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 
 export function SOPs() {
   const { company, user } = useAuth()
   const queryClient = useQueryClient()
   const [showModal, setShowModal] = useState(false)
+  const [editingSOPId, setEditingSOPId] = useState(null)
   const [viewSOPModal, setViewSOPModal] = useState({ show: false, sop: null })
 
   const [formData, setFormData] = useState({ title: '', department_id: '', version: 'v1.0', content: '', status: 'draft' })
@@ -46,14 +47,23 @@ export function SOPs() {
     enabled: !!company?.id
   })
 
-  const createSOP = useMutation({
+  const saveSOP = useMutation({
     mutationFn: async (payload) => {
-      const { error } = await insforge.from('sops').insert([payload])
-      if (error) throw error
+      if (editingSOPId) {
+        const { error } = await insforge
+          .from('sops')
+          .update(payload)
+          .eq('id', editingSOPId)
+        if (error) throw error
+      } else {
+        const { error } = await insforge.from('sops').insert([payload])
+        if (error) throw error
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['sops', company?.id])
       setShowModal(false)
+      setEditingSOPId(null)
       setFormData({ title: '', department_id: '', version: 'v1.0', content: '', status: 'draft' })
     }
   })
@@ -74,7 +84,7 @@ export function SOPs() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    createSOP.mutate({
+    saveSOP.mutate({
       company_id: company.id,
       title: formData.title,
       department_id: formData.department_id || null,
@@ -84,9 +94,27 @@ export function SOPs() {
     })
   }
 
+  const handleEditClick = (sop) => {
+    setEditingSOPId(sop.id)
+    setFormData({
+      title: sop.title || '',
+      department_id: sop.department_id || '',
+      version: sop.version || 'v1.0',
+      content: sop.content || '',
+      status: sop.status || 'draft'
+    })
+    setShowModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowModal(false)
+    setEditingSOPId(null)
+    setFormData({ title: '', department_id: '', version: 'v1.0', content: '', status: 'draft' })
+  }
+
   const columns = [
     { header: 'Title', accessorKey: 'title', cell: info => <span style={{ fontWeight: 600 }}>{info.getValue()}</span> },
-    { header: 'Department', accessorKey: 'departments.name', cell: info => info.getValue() || '-' },
+    { header: 'Department', accessorKey: 'departments', cell: info => info.getValue()?.name || '-' },
     { header: 'Version', accessorKey: 'version' },
     { 
       header: 'Status', 
@@ -97,13 +125,21 @@ export function SOPs() {
       }
     },
     { header: 'Last Reviewed', accessorKey: 'last_reviewed_at', cell: info => info.getValue() ? new Date(info.getValue()).toLocaleDateString() : 'Never' },
-    { header: 'Reviewed By', accessorKey: 'reviewer', cell: info => info.getValue() ? `${info.getValue().first_name} ${info.getValue().last_name}` : '-' },
+    { 
+      header: 'Reviewed By', 
+      accessorKey: 'reviewer', 
+      cell: info => {
+        const rev = info.getValue()
+        return rev ? `1 (${rev.first_name} ${rev.last_name})` : '0'
+      }
+    },
     { 
       header: 'Actions', 
       id: 'actions',
       cell: (info) => (
         <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
           <button onClick={() => setViewSOPModal({ show: true, sop: info.row.original })} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
+          <button onClick={() => handleEditClick(info.row.original)} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>Edit</button>
         </div>
       )
     }
@@ -121,7 +157,7 @@ export function SOPs() {
         <DataTable columns={columns} data={sops} isLoading={isLoading} onRowClick={(sop) => setViewSOPModal({ show: true, sop })} />
       </div>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="New SOP">
+      <Modal isOpen={showModal} onClose={handleCloseModal} title={editingSOPId ? "Edit SOP" : "New SOP"}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto', padding: '4px' }}>
           <Input label="SOP Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required />
           <Select 
@@ -134,17 +170,15 @@ export function SOPs() {
             <div style={{ flex: 1 }}><Input label="Version" value={formData.version} onChange={e => setFormData({...formData, version: e.target.value})} required /></div>
             <div style={{ flex: 1 }}><Select label="Status" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} options={[{value: 'draft', label: 'Draft'}, {value: 'active', label: 'Active'}, {value: 'archived', label: 'Archived'}]} /></div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ fontSize: '14px', fontWeight: 600 }}>Content</label>
-            <textarea 
-              value={formData.content} 
-              onChange={e => setFormData({...formData, content: e.target.value})} 
-              style={{ width: '100%', minHeight: '150px', padding: '12px', border: '1px solid #D1D5DB', borderRadius: 0, resize: 'vertical' }} 
-            />
-          </div>
+          <Textarea 
+            label="Content"
+            value={formData.content} 
+            onChange={e => setFormData({...formData, content: e.target.value})} 
+            style={{ minHeight: '150px' }}
+          />
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-            <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={createSOP.isPending}>{createSOP.isPending ? 'Saving...' : 'Save SOP'}</Button>
+            <Button type="button" variant="secondary" onClick={handleCloseModal}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={saveSOP.isPending}>{saveSOP.isPending ? 'Saving...' : (editingSOPId ? 'Save Changes' : 'Create SOP')}</Button>
           </div>
         </form>
       </Modal>
@@ -156,7 +190,7 @@ export function SOPs() {
               <Badge variant="default" label={viewSOPModal.sop.departments?.name || 'General'} />
               <Badge variant="inactive" label={`Version ${viewSOPModal.sop.version}`} />
             </div>
-            <div style={{ background: '#F9FAFB', padding: '24px', border: "1px solid var(--gp-border-light)", minHeight: '300px', whiteSpace: 'pre-wrap' }}>
+            <div style={{ background: "var(--gp-background)", padding: '24px', border: "1px solid var(--gp-border-light)", minHeight: '300px', whiteSpace: 'pre-wrap', color: "var(--gp-black)" }}>
               {viewSOPModal.sop.content || <span style={{ color: '#9CA3AF' }}>No content provided.</span>}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>

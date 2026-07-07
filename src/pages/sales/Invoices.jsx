@@ -57,7 +57,7 @@ export function Invoices() {
       if (error) throw error
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['invoices', company?.id])
+      queryClient.invalidateQueries({ queryKey: ['invoices', company?.id] })
       setIsPaymentOpen(false)
       setSelectedInvoice(null)
       setPaymentData({ amount: '', date: new Date().toISOString().split('T')[0], method: 'Bank Transfer', reference: '' })
@@ -78,7 +78,7 @@ export function Invoices() {
 
   const columns = [
     { header: 'Invoice #', accessorKey: 'invoice_number', cell: ({ row }) => <span style={{ fontWeight: 600, color: "var(--gp-black)" }}>{row.original.invoice_number}</span> },
-    { header: 'Client', accessorKey: 'clients.name', cell: (info) => info.getValue() || '-' },
+    { header: 'Client', accessorKey: 'clients', cell: (info) => info.getValue()?.name || '-' },
     { header: 'Total', accessorKey: 'total', cell: (info) => `UGX ${Number(info.getValue() || 0).toLocaleString()}` },
     { header: 'Paid', accessorKey: 'amount_paid', cell: (info) => `UGX ${Number(info.getValue() || 0).toLocaleString()}` },
     { header: 'Balance', cell: ({ row }) => `UGX ${Math.max(0, Number(row.original.total) - Number(row.original.amount_paid || 0)).toLocaleString()}` },

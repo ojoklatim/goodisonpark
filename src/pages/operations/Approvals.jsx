@@ -69,7 +69,10 @@ export function Approvals() {
     }
   })
 
-  const formatType = (s) => s.charAt(0).toUpperCase() + s.slice(1)
+  const formatType = (s) => {
+    if (!s) return ''
+    return s.charAt(0).toUpperCase() + s.slice(1)
+  }
 
   const columns = [
     { header: 'Type', accessorKey: 'type', cell: info => <Badge variant="default" label={formatType(info.getValue())} /> },

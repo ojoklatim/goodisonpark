@@ -7,6 +7,9 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { Spinner } from '../../components/ui/Spinner'
+import { Modal } from '../../components/ui/Modal'
+import { Input } from '../../components/ui/Input'
+import { Select } from '../../components/ui/Select'
 import { getInitials } from '../../lib/utils'
 
 export function ProjectDetail() {
@@ -15,6 +18,10 @@ export function ProjectDetail() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState('Overview')
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '', description: '', department_id: '', status: 'planning', priority: 'medium', start_date: '', due_date: ''
+  })
 
   const { data: project, isLoading: loadingProject } = useQuery({
     queryKey: ['project', id],
@@ -50,27 +57,52 @@ export function ProjectDetail() {
     enabled: !!id
   })
 
-  const archiveMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await insforge.from('projects').update({ status: 'cancelled' }).eq('id', id)
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments', company?.id],
+    queryFn: async () => {
+      const { data, error } = await insforge.from('departments').select('id, name').eq('company_id', company?.id)
+      if (error) throw error
+      return data
+    },
+    enabled: !!company?.id
+  })
+
+
+  const updateMutation = useMutation({
+    mutationFn: async (payload) => {
+      const { error } = await insforge.from('projects').update(payload).eq('id', id)
       if (error) throw error
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['project', id])
       queryClient.invalidateQueries(['projects', company?.id])
+      setShowEditModal(false)
     }
   })
 
-  const handleArchive = () => {
-    if (confirm('Are you sure you want to cancel/archive this project?')) {
-      archiveMutation.mutate()
-    }
+
+  const handleEditClick = () => {
+    setFormData({
+      name: project.name || '',
+      description: project.description || '',
+      department_id: project.department_id || '',
+      status: project.status || 'planning',
+      priority: project.priority || 'medium',
+      start_date: project.start_date || '',
+      due_date: project.due_date || ''
+    })
+    setShowEditModal(true)
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    updateMutation.mutate(formData)
   }
 
   if (loadingProject || loadingTasks) return <div style={{ padding: '48px', display: 'flex', justifyContent: 'center' }}><Spinner /></div>
   if (!project) return <div>Project not found</div>
 
-  const formatStatus = (s) => s.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+  const formatStatus = (s) => (s || '').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
 
   const getStatusColor = (status) => {
     if (status === 'active') return "var(--gp-blue)"
@@ -110,10 +142,7 @@ export function ProjectDetail() {
           <div style={{ color: '#6B7280', fontSize: '14px', marginTop: '8px' }}>Due: {project.due_date ? new Date(project.due_date).toLocaleDateString() : 'None'}</div>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
-          <Button variant="secondary" onClick={handleArchive} disabled={archiveMutation.isPending || project.status === 'cancelled'}>
-            {archiveMutation.isPending ? 'Archiving...' : 'Archive'}
-          </Button>
-          <Button variant="primary">Edit Project</Button>
+          <Button variant="primary" onClick={handleEditClick}>Edit Project</Button>
         </div>
       </div>
 
@@ -214,6 +243,36 @@ export function ProjectDetail() {
         {activeTab === 'Files' && <div style={{ color: '#6B7280' }}>Document upload + list coming soon.</div>}
         {activeTab === 'Activity' && <div style={{ color: '#6B7280' }}>Timeline of project changes coming soon.</div>}
       </div>
+
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Project">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto', padding: '4px' }}>
+          <Input label="Project Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
+          <Input label="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+          <Select 
+            label="Department" 
+            value={formData.department_id} 
+            onChange={e => setFormData({...formData, department_id: e.target.value})}
+            options={[{value: '', label: '-- None --'}, ...departments.map(d => ({value: d.id, label: d.name}))]} 
+          />
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <Select label="Status" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} options={[{value: 'planning', label: 'Planning'}, {value: 'active', label: 'Active'}, {value: 'on_hold', label: 'On Hold'}, {value: 'completed', label: 'Completed'}, {value: 'cancelled', label: 'Cancelled'}]} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <Select label="Priority" value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value})} options={[{value: 'low', label: 'Low'}, {value: 'medium', label: 'Medium'}, {value: 'high', label: 'High'}, {value: 'critical', label: 'Critical'}]} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={{ flex: 1 }}><Input label="Start Date" type="date" value={formData.start_date} onChange={e => setFormData({...formData, start_date: e.target.value})} /></div>
+            <div style={{ flex: 1 }}><Input label="Due Date" type="date" value={formData.due_date} onChange={e => setFormData({...formData, due_date: e.target.value})} /></div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
+            <Button type="button" variant="secondary" onClick={() => setShowEditModal(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={updateMutation.isPending}>{updateMutation.isPending ? 'Saving...' : 'Save Changes'}</Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }

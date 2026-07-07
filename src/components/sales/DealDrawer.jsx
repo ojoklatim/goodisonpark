@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { insforge } from '../../lib/insforge'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
@@ -19,6 +20,7 @@ const STAGES = [
 
 export function DealDrawer({ dealId, onClose }) {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
   const [uploading, setUploading] = useState(false)
 
@@ -28,7 +30,7 @@ export function DealDrawer({ dealId, onClose }) {
       if (!dealId) return null
       const { data, error } = await insforge
         .from('deals')
-        .select(`*, profiles!deals_assigned_to_fkey(id, first_name, last_name)`)
+        .select(`*, profiles!deals_assigned_to_fkey(id, first_name, last_name), leads(id, first_name, last_name, company_name, email, phone)`)
         .eq('id', dealId)
         .single()
       if (error) throw error
@@ -84,10 +86,113 @@ export function DealDrawer({ dealId, onClose }) {
     mutationFn: async (newData) => {
       const { error } = await insforge.from('deals').update(newData).eq('id', dealId)
       if (error) throw error
+
+      // Auto-create client when deal is marked Closed Won
+      if (newData.stage === 'closed_won' && deal?.stage !== 'closed_won') {
+        const lead = deal?.leads
+        const clientName = lead
+          ? (`${lead.first_name || ''} ${lead.last_name || ''}`).trim() || lead.company_name || deal.title
+          : deal?.title
+
+        // Check if a client record already exists for this lead
+        let existingQuery = insforge
+          .from('clients')
+          .select('id, total_deal_value')
+          .eq('company_id', deal.company_id)
+
+        // Only filter by lead_id if lead exists — empty string won't match a UUID
+        if (lead?.id) {
+          existingQuery = existingQuery.eq('lead_id', lead.id)
+        } else {
+          existingQuery = existingQuery.is('lead_id', null)
+        }
+
+        const { data: existing, error: existingError } = await existingQuery.maybeSingle()
+        if (existingError) throw existingError
+
+        if (existing) {
+          // Update total deal value
+          const { error: updateErr } = await insforge.from('clients').update({
+            total_deal_value: Number(existing.total_deal_value || 0) + Number(deal.value || 0)
+          }).eq('id', existing.id)
+          if (updateErr) throw updateErr
+        } else {
+          // Create a brand new client
+          const { error: insertErr } = await insforge.from('clients').insert([{
+            company_id: deal.company_id,
+            lead_id: lead?.id || null,
+            name: clientName,
+            email: lead?.email || null,
+            phone: lead?.phone || null,
+            company_name: lead?.company_name || null,
+            total_deal_value: Number(deal.value || 0),
+            is_active: true
+          }])
+          if (insertErr) throw insertErr
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['deal', dealId])
       queryClient.invalidateQueries(['deals'])
+      queryClient.invalidateQueries({ queryKey: ['clients'] })
+    },
+    onError: (error) => {
+      console.error('Deal update/client creation error:', error)
+      alert('Error: ' + (error?.message || JSON.stringify(error)))
+    }
+  })
+
+  // Standalone mutation to create a client from an existing closed_won deal
+  const createClientNow = useMutation({
+    mutationFn: async () => {
+      const lead = deal?.leads
+      const clientName = lead
+        ? (`${lead.first_name || ''} ${lead.last_name || ''}`).trim() || lead.company_name || deal.title
+        : deal?.title
+
+      let existingQuery = insforge
+        .from('clients')
+        .select('id, total_deal_value')
+        .eq('company_id', deal.company_id)
+
+      if (lead?.id) {
+        existingQuery = existingQuery.eq('lead_id', lead.id)
+      } else {
+        existingQuery = existingQuery.is('lead_id', null)
+      }
+
+      const { data: existing, error: existingError } = await existingQuery.maybeSingle()
+      if (existingError) throw existingError
+
+      if (existing) {
+        const { error: updateErr } = await insforge.from('clients').update({
+          total_deal_value: Number(existing.total_deal_value || 0) + Number(deal.value || 0)
+        }).eq('id', existing.id)
+        if (updateErr) throw updateErr
+        return 'updated'
+      } else {
+        const { error: insertErr } = await insforge.from('clients').insert([{
+          company_id: deal.company_id,
+          lead_id: lead?.id || null,
+          name: clientName,
+          email: lead?.email || null,
+          phone: lead?.phone || null,
+          company_name: lead?.company_name || null,
+          total_deal_value: Number(deal.value || 0),
+          is_active: true
+        }])
+        if (insertErr) throw insertErr
+        return 'created'
+      }
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] })
+      alert(result === 'created' ? '✅ Client created successfully!' : '✅ Existing client updated.')
+    },
+    onError: (error) => {
+      console.error('Create client error:', error)
+      alert('Failed to create client: ' + (error?.message || JSON.stringify(error)))
     }
   })
 
@@ -122,6 +227,11 @@ export function DealDrawer({ dealId, onClose }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['deal_files', dealId])
+      setUploading(false)
+    },
+    onError: (error) => {
+      console.error("Upload Error:", error)
+      alert("Failed to upload file: " + error.message)
       setUploading(false)
     }
   })
@@ -177,9 +287,9 @@ export function DealDrawer({ dealId, onClose }) {
             <div>Loading...</div>
           ) : (
             <>
-              {activeTab === 'overview' && <OverviewTab deal={deal} updateDeal={updateDeal} />}
+              {activeTab === 'overview' && <OverviewTab deal={deal} updateDeal={updateDeal} createClientNow={createClientNow} />}
               {activeTab === 'activities' && <ActivitiesTab activities={activities} logActivity={logActivity} />}
-              {activeTab === 'quotations' && <QuotationsTab quotations={quotations} />}
+              {activeTab === 'quotations' && <QuotationsTab quotations={quotations} navigate={navigate} deal={deal} />}
               {activeTab === 'files' && <FilesTab files={files} uploadFile={uploadFile} uploading={uploading} setUploading={setUploading} />}
             </>
           )}
@@ -189,7 +299,7 @@ export function DealDrawer({ dealId, onClose }) {
   )
 }
 
-function OverviewTab({ deal, updateDeal }) {
+function OverviewTab({ deal, updateDeal, createClientNow }) {
   const [formData, setFormData] = useState({
     title: deal.title,
     value: deal.value,
@@ -249,6 +359,26 @@ function OverviewTab({ deal, updateDeal }) {
           {updateDeal.isPending ? 'Saving...' : 'Save Changes'}
         </Button>
       </div>
+
+      {/* Create Client button for already-closed-won deals */}
+      {deal.stage === 'closed_won' && (
+        <div style={{ marginTop: '8px', padding: '12px 16px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#166534' }}>🏆 Deal Closed Won</p>
+            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#15803D' }}>Create or update the client record in your Clients directory.</p>
+          </div>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={() => createClientNow.mutate()}
+            disabled={createClientNow.isPending}
+            style={{ background: '#16A34A', border: 'none', whiteSpace: 'nowrap', marginLeft: '12px' }}
+          >
+            {createClientNow.isPending ? 'Creating...' : 'Create Client'}
+          </Button>
+        </div>
+      )}
     </form>
   )
 }
@@ -308,11 +438,11 @@ function ActivitiesTab({ activities, logActivity }) {
   )
 }
 
-function QuotationsTab({ quotations }) {
+function QuotationsTab({ quotations, navigate, deal }) {
   return (
     <div>
       <div style={{ marginBottom: '16px' }}>
-        <Button variant="primary" style={{ width: '100%' }}>Create Quotation</Button>
+        <Button variant="primary" style={{ width: '100%' }} onClick={() => navigate('/dashboard/sales/quotations/new', { state: { deal_id: deal.id } })}>Create Quotation</Button>
       </div>
       {quotations.length === 0 ? (
         <p style={{ color: '#6B7280', fontSize: '14px', textAlign: 'center' }}>No quotations generated.</p>

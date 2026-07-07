@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { insforge } from '../../lib/insforge'
 import { useAuth } from '../../hooks/useAuth'
 import { PageHeader } from '../../components/ui/PageHeader'
@@ -12,8 +13,10 @@ import { Spinner } from '../../components/ui/Spinner'
 
 export function Departments() {
   const { company } = useAuth()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [showModal, setShowModal] = useState(false)
+  const [editingDeptId, setEditingDeptId] = useState(null)
   const [formData, setFormData] = useState({ name: '', description: '', head_id: '' })
 
   const { data: departments = [], isLoading: loadingDepts } = useQuery({
@@ -60,12 +63,25 @@ export function Departments() {
 
   const saveMutation = useMutation({
     mutationFn: async (payload) => {
-      const { error } = await insforge.from('departments').insert([payload])
-      if (error) throw error
+      if (editingDeptId) {
+        const { error } = await insforge
+          .from('departments')
+          .update({
+            name: payload.name,
+            description: payload.description,
+            head_id: payload.head_id
+          })
+          .eq('id', editingDeptId)
+        if (error) throw error
+      } else {
+        const { error } = await insforge.from('departments').insert([payload])
+        if (error) throw error
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['departments', company?.id])
       setShowModal(false)
+      setEditingDeptId(null)
       setFormData({ name: '', description: '', head_id: '' })
     }
   })
@@ -78,6 +94,22 @@ export function Departments() {
       description: formData.description,
       head_id: formData.head_id || null
     })
+  }
+
+  const handleEditClick = (dept) => {
+    setEditingDeptId(dept.id)
+    setFormData({
+      name: dept.name,
+      description: dept.description || '',
+      head_id: dept.head_id || ''
+    })
+    setShowModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowModal(false)
+    setEditingDeptId(null)
+    setFormData({ name: '', description: '', head_id: '' })
   }
 
   const getEmpCount = (deptName) => profiles.filter(p => p.department === deptName).length
@@ -102,7 +134,7 @@ export function Departments() {
               <div style={{ padding: '24px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                   <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>{dept.name}</h3>
-                  <button style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer', fontSize: '14px', fontWeight: 600 }}>Edit</button>
+                  <button onClick={() => handleEditClick(dept)} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer', fontSize: '14px', fontWeight: 600 }}>Edit</button>
                 </div>
                 <div style={{ marginBottom: '16px', color: '#4B5563', fontSize: '14px' }}>
                   <strong>Head:</strong> {dept.head ? `${dept.head.first_name} ${dept.head.last_name}` : 'Not assigned'}
@@ -123,8 +155,8 @@ export function Departments() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                  <Button variant="secondary" style={{ flex: 1, fontSize: '13px' }}>View Employees</Button>
-                  <Button variant="secondary" style={{ flex: 1, fontSize: '13px' }}>View Projects</Button>
+                  <Button variant="secondary" style={{ flex: 1, fontSize: '13px' }} onClick={() => navigate('/dashboard/employees', { state: { department: dept.name } })}>View Employees</Button>
+                  <Button variant="secondary" style={{ flex: 1, fontSize: '13px' }} onClick={() => navigate('/dashboard/operations/projects', { state: { departmentId: dept.id } })}>View Projects</Button>
                 </div>
               </div>
             </Card>
@@ -137,7 +169,7 @@ export function Departments() {
         </div>
       )}
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="New Department">
+      <Modal isOpen={showModal} onClose={handleCloseModal} title={editingDeptId ? "Edit Department" : "New Department"}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <Input 
             label="Department Name" 
@@ -160,7 +192,7 @@ export function Departments() {
             ]}
           />
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-            <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+            <Button type="button" variant="secondary" onClick={handleCloseModal}>Cancel</Button>
             <Button type="submit" variant="primary" disabled={saveMutation.isPending}>
               {saveMutation.isPending ? 'Saving...' : 'Save Department'}
             </Button>

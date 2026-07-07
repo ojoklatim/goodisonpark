@@ -34,11 +34,15 @@ export function Overview() {
         insforge.from('profiles').select('*', { count: 'exact', head: true }).eq('company_id', companyId),
         insforge.from('projects').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'active'),
         insforge.from('deals').select('*', { count: 'exact', head: true }).eq('company_id', companyId).not('stage', 'in', '("closed_won","closed_lost")'),
-        insforge.from('invoices').select('total').eq('company_id', companyId).eq('status', 'paid').gte('paid_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+        insforge.from('invoices').select('total, paid_at, created_at').eq('company_id', companyId).eq('status', 'paid'),
         insforge.from('approvals').select('*', { count: 'exact', head: true }).eq('company_id', companyId).eq('status', 'pending')
       ])
 
-      const revenueMTD = invoicesRes.data?.reduce((sum, inv) => sum + (Number(inv.total) || 0), 0) || 0
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      const revenueMTD = invoicesRes.data?.filter(inv => {
+        const date = new Date(inv.paid_at || inv.created_at)
+        return date >= monthStart
+      }).reduce((sum, inv) => sum + (Number(inv.total) || 0), 0) || 0
 
       return {
         employees: profilesRes.count || 0,
@@ -178,7 +182,7 @@ export function Overview() {
     }
   })
 
-  const isManager = role === 'company_admin' || role === 'manager'
+  const isManager = role !== 'employee'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

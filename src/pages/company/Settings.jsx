@@ -102,12 +102,12 @@ export function Settings() {
 
     try {
       const { error: uploadError } = await insforge.storage
-        .from('avatars')
+        .from('branding')
         .upload(filePath, logoFile)
       
       if (uploadError) throw uploadError
 
-      const { data: urlData } = insforge.storage.from('avatars').getPublicUrl(filePath)
+      const { data: urlData } = insforge.storage.from('branding').getPublicUrl(filePath)
       
       await updateCompany.mutateAsync({ logo_url: urlData.publicUrl })
       setLogoFile(null)
@@ -123,7 +123,7 @@ export function Settings() {
     <div className="settings-layout" style={{ display: 'flex', gap: '32px' }}>
       {/* Sidebar Navigation */}
       <div className="settings-sidebar" style={{ width: '200px', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
-        {['general', 'branding', 'financial', 'integrations'].map(tab => (
+        {['general', 'financial'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -166,38 +166,7 @@ export function Settings() {
           </form>
         )}
 
-        {activeTab === 'branding' && (
-          <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px' }}>Branding</h3>
-            {companyData?.logo_url && (
-              <div style={{ marginBottom: '24px' }}>
-                <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '8px' }}>Current Logo</p>
-                <img src={companyData.logo_url} alt="Company Logo" style={{ height: '80px', objectFit: 'contain' }} />
-              </div>
-            )}
-            
-            <div style={{ 
-              border: '2px dashed #D1D5DB', 
-              padding: '40px', 
-              textAlign: 'center', 
-              background: '#F9FAFB',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px'
-            }}>
-              <UploadCloud size={40} color="#9CA3AF" />
-              <div>
-                <p style={{ margin: 0, fontWeight: 500, color: '#111827' }}>Click to upload or drag and drop</p>
-                <p style={{ margin: 0, fontSize: '12px', color: '#6B7280' }}>SVG, PNG, JPG (max. 800x400px)</p>
-              </div>
-              <input type="file" accept="image/*" onChange={(e) => setLogoFile(e.target.files[0])} />
-            </div>
 
-            {logoFile && (
-              <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-                <Button onClick={handleLogoUpload} variant="primary">Upload New Logo</Button>
-              </div>
-            )}
-          </div>
-        )}
 
         {activeTab === 'financial' && (
           <form onSubmit={handleFinancialSave}>
@@ -218,12 +187,7 @@ export function Settings() {
           </form>
         )}
 
-        {activeTab === 'integrations' && (
-          <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px', color: 'var(--gp-black)' }}>Integrations</h3>
-            <p style={{ color: '#6B7280' }}>No active integrations. API keys and webhooks will appear here.</p>
-          </div>
-        )}
+
       </div>
     </div>
   )

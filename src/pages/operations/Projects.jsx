@@ -10,13 +10,17 @@ import { Modal } from '../../components/ui/Modal'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Spinner } from '../../components/ui/Spinner'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { getInitials } from '../../lib/utils'
 
 export function Projects() {
   const { company, user } = useAuth()
   const queryClient = useQueryClient()
   const [showModal, setShowModal] = useState(false)
+  const location = useLocation()
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [priorityFilter, setPriorityFilter] = useState('all')
+  const [deptFilter, setDeptFilter] = useState(location.state?.departmentId || 'all')
 
   const [formData, setFormData] = useState({
     name: '', description: '', department_id: '', status: 'planning', priority: 'medium', start_date: '', due_date: ''
@@ -56,7 +60,7 @@ export function Projects() {
   })
 
   const { data: departments = [] } = useQuery({
-    queryKey: ['departments', company?.id],
+    queryKey: ['projects_departments', company?.id],
     queryFn: async () => {
       const { data, error } = await insforge.from('departments').select('id, name').eq('company_id', company?.id)
       if (error) throw error
@@ -94,7 +98,7 @@ export function Projects() {
     return "var(--gp-border-light)"
   }
 
-  const formatStatus = (s) => s.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+  const formatStatus = (s) => (s || '').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
 
   const projectStats = projects.map(proj => {
     const projTasks = tasks.filter(t => t.project_id === proj.id)
@@ -111,6 +115,13 @@ export function Projects() {
     return { ...proj, progress, team }
   })
 
+  const filteredProjects = projectStats.filter(proj => {
+    const matchesStatus = statusFilter === 'all' || proj.status === statusFilter
+    const matchesPriority = priorityFilter === 'all' || proj.priority === priorityFilter
+    const matchesDept = deptFilter === 'all' || proj.department_id === deptFilter
+    return matchesStatus && matchesPriority && matchesDept
+  })
+
   return (
     <div>
       <PageHeader 
@@ -120,16 +131,50 @@ export function Projects() {
       />
 
       <div style={{ display: 'flex', gap: '16px', marginTop: '24px', marginBottom: '24px' }}>
-        <div style={{ width: '200px' }}><Select options={[{value: 'all', label: 'All Statuses'}]} defaultValue="all" /></div>
-        <div style={{ width: '200px' }}><Select options={[{value: 'all', label: 'All Priorities'}]} defaultValue="all" /></div>
-        <div style={{ width: '200px' }}><Select options={[{value: 'all', label: 'All Departments'}]} defaultValue="all" /></div>
+        <div style={{ width: '200px' }}>
+          <Select 
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            options={[
+              {value: 'all', label: 'All Statuses'},
+              {value: 'planning', label: 'Planning'},
+              {value: 'active', label: 'Active'},
+              {value: 'on_hold', label: 'On Hold'},
+              {value: 'completed', label: 'Completed'},
+              {value: 'cancelled', label: 'Cancelled'}
+            ]}
+          />
+        </div>
+        <div style={{ width: '200px' }}>
+          <Select 
+            value={priorityFilter}
+            onChange={e => setPriorityFilter(e.target.value)}
+            options={[
+              {value: 'all', label: 'All Priorities'},
+              {value: 'low', label: 'Low'},
+              {value: 'medium', label: 'Medium'},
+              {value: 'high', label: 'High'},
+              {value: 'critical', label: 'Critical'}
+            ]}
+          />
+        </div>
+        <div style={{ width: '200px' }}>
+          <Select 
+            value={deptFilter}
+            onChange={e => setDeptFilter(e.target.value)}
+            options={[
+              {value: 'all', label: 'All Departments'},
+              ...departments.map(d => ({value: d.id, label: d.name}))
+            ]}
+          />
+        </div>
       </div>
 
       {(loadingProjects || loadingTasks) ? (
         <div style={{ padding: '48px', display: 'flex', justifyContent: 'center' }}><Spinner /></div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-          {projectStats.map(proj => (
+          {filteredProjects.map(proj => (
             <Card key={proj.id} style={{ borderLeft: `4px solid ${getStatusColor(proj.status)}` }}>
               <div style={{ padding: '20px' }}>
                 <Link to={`/dashboard/operations/projects/${proj.id}`} style={{ fontSize: '16px', fontWeight: 700, color: "var(--gp-black)", textDecoration: 'none', display: 'block', marginBottom: '12px' }}>
@@ -139,10 +184,10 @@ export function Projects() {
                   <Badge variant={proj.status === 'completed' ? 'success' : proj.status === 'active' ? 'active' : 'default'} label={formatStatus(proj.status)} />
                   <Badge variant={proj.priority === 'high' || proj.priority === 'critical' ? 'inactive' : 'default'} label={formatStatus(proj.priority)} />
                 </div>
-                <div style={{ color: '#4B5563', fontSize: '13px', marginBottom: '8px' }}>
+                <div style={{ color: 'var(--gp-black)', opacity: 0.8, fontSize: '13px', marginBottom: '8px' }}>
                   <strong>Department:</strong> {proj.departments?.name || 'None'}
                 </div>
-                <div style={{ color: '#4B5563', fontSize: '13px', marginBottom: '16px' }}>
+                <div style={{ color: 'var(--gp-black)', opacity: 0.8, fontSize: '13px', marginBottom: '16px' }}>
                   <strong>Due Date:</strong> {proj.due_date || '-'}
                 </div>
                 
@@ -163,7 +208,7 @@ export function Projects() {
                     </div>
                   ))}
                   {proj.team.length > 5 && (
-                    <div style={{ width: '28px', height: '28px', background: '#F3F4F6', color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 600, border: '2px solid var(--gp-background)', marginLeft: '-8px', zIndex: 1 }}>
+                    <div style={{ width: '28px', height: '28px', background: 'var(--gp-background)', color: 'var(--gp-black)', opacity: 0.8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 600, border: '2px solid var(--gp-background)', marginLeft: '-8px', zIndex: 1 }}>
                       +{proj.team.length - 5}
                     </div>
                   )}
@@ -173,7 +218,7 @@ export function Projects() {
             </Card>
           ))}
           {projectStats.length === 0 && (
-            <div style={{ gridColumn: '1 / -1', padding: '48px', textAlign: 'center', background: '#F9FAFB', border: '1px dashed #D1D5DB' }}>
+            <div style={{ gridColumn: '1 / -1', padding: '48px', textAlign: 'center', background: 'var(--gp-card)', border: '1px dashed var(--gp-border-light)' }}>
               No projects found. Create one to get started.
             </div>
           )}

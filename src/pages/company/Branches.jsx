@@ -96,7 +96,12 @@ export function Branches() {
     { 
       header: 'Created', 
       accessorKey: 'created_at',
-      cell: (info) => format(new Date(info.getValue()), 'MMM dd, yyyy')
+      cell: (info) => {
+        const val = info.getValue()
+        if (!val) return '—'
+        const d = new Date(val)
+        return isNaN(d.getTime()) ? '—' : format(d, 'MMM dd, yyyy')
+      }
     },
     {
       header: 'Actions',

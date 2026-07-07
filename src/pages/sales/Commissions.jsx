@@ -50,8 +50,7 @@ export function Commissions() {
         .eq('company_id', company?.id)
         .eq('stage', 'closed_won')
       if (error) throw error
-      const commissionedDealIds = new Set(commissions.map(c => c.deal_id))
-      return (data || []).filter(d => !commissionedDealIds.has(d.id))
+      return data || []
     },
     enabled: !!company?.id && isAddOpen
   })
@@ -188,7 +187,7 @@ export function Commissions() {
       accessorKey: 'rate',
       cell: (info) => {
         const row = info.row.original
-        if (row.status !== 'pending') return `${info.getValue()}%`
+        if (row.status === 'paid') return `${info.getValue()}%`
         if (editingRateId === row.id) {
           return (
             <div style={{ display: 'flex', gap: 4, alignItems: 'center' }} onClick={e => e.stopPropagation()}>
@@ -227,6 +226,9 @@ export function Commissions() {
           )}
           {row.original.status === 'approved' && (
             <Button variant="primary" size="sm" onClick={() => markPaid.mutate(row.original.id)}>Mark Paid</Button>
+          )}
+          {row.original.status === 'paid' && (
+            <span style={{ fontSize: '12px', color: '#10B981', fontWeight: 500 }}>✓ Settled</span>
           )}
         </div>
       )

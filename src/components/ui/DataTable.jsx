@@ -68,8 +68,17 @@ export function DataTable({
     const exportData = sorted.map((row) => {
       const obj = {}
       columns.forEach((col) => { 
-        const accessor = col.accessor || col.accessorKey
-        if (accessor) obj[col.header] = row[accessor] 
+        if (col.id === 'actions' || col.header === 'Actions') return;
+
+        if (col.exportValue) {
+          obj[col.header] = col.exportValue(row);
+        } else {
+          const accessor = col.accessor || col.accessorKey
+          if (accessor) {
+            const val = row[accessor]
+            obj[col.header] = typeof val === 'object' && val !== null ? JSON.stringify(val) : val
+          }
+        }
       })
       return obj
     })

@@ -14,7 +14,7 @@ import { format } from 'date-fns'
 
 export function ClientProfile() {
   const { id } = useParams()
-  const { company } = useAuth()
+  const { company, role, profile } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   
@@ -24,7 +24,11 @@ export function ClientProfile() {
   const { data: client, isLoading } = useQuery({
     queryKey: ['client', id],
     queryFn: async () => {
-      const { data, error } = await insforge.from('clients').select('*').eq('id', id).single()
+      const { data, error } = await insforge
+        .from('clients')
+        .select('*, leads!lead_id(assigned_to)')
+        .eq('id', id)
+        .single()
       if (error) throw error
       return data
     },
@@ -118,6 +122,10 @@ export function ClientProfile() {
   const totalRevenue = deals.filter(d => d.stage === 'closed_won').reduce((sum, d) => sum + Number(d.value || 0), 0)
   const outstandingInvoices = invoices.filter(i => ['unpaid', 'partial', 'overdue'].includes(i.status)).length
 
+  const isAdminOrManager = role !== 'employee'
+  const isOwner = client?.leads?.assigned_to === profile?.id
+  const canEdit = isAdminOrManager || isOwner
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
@@ -132,7 +140,7 @@ export function ClientProfile() {
           </div>
         </div>
         <div style={{ marginLeft: 'auto' }}>
-          <Button variant="secondary" onClick={openEdit}>Edit Client</Button>
+          <Button variant="secondary" onClick={openEdit} disabled={!canEdit}>Edit Client</Button>
         </div>
       </div>
 

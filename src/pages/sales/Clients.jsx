@@ -17,14 +17,34 @@ export function Clients() {
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ['clients', company?.id],
     queryFn: async () => {
-      // Get clients, we also want active deals count
-      const { data, error } = await insforge
+      // Get clients
+      const { data: clientsData, error: clientsError } = await insforge
         .from('clients')
-        .select(`*, deals(count)`)
+        .select('*')
         .eq('company_id', company?.id)
         .order('created_at', { ascending: false })
-      if (error) throw error
-      return data
+      if (clientsError) throw clientsError
+
+      // Get deals for these clients (via lead_id)
+      const leadIds = clientsData.map(c => c.lead_id).filter(Boolean)
+      let dealsData = []
+      if (leadIds.length > 0) {
+        const { data: deals, error: dealsError } = await insforge
+          .from('deals')
+          .select('id, lead_id')
+          .in('lead_id', leadIds)
+        if (dealsError) throw dealsError
+        dealsData = deals || []
+      }
+
+      // Map deals count to clients
+      return clientsData.map(client => {
+        const clientDeals = dealsData.filter(d => d.lead_id === client.lead_id)
+        return {
+          ...client,
+          deals: [{ count: clientDeals.length }]
+        }
+      })
     },
     enabled: !!company?.id
   })

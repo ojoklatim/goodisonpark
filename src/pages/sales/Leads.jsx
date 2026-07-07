@@ -6,7 +6,7 @@ import { PageHeader } from '../../components/ui/PageHeader'
 import { DataTable } from '../../components/ui/DataTable'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
-import { Input } from '../../components/ui/Input'
+import { Input, Textarea } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Badge } from '../../components/ui/Badge'
 import { Search } from 'lucide-react'
@@ -17,7 +17,7 @@ const STATUSES = ['new', 'contacted', 'qualified', 'unqualified', 'converted']
 const PRIORITIES = ['low', 'medium', 'high']
 
 export function Leads() {
-  const { company } = useAuth()
+  const { company, role, profile } = useAuth()
   const queryClient = useQueryClient()
 
   const [search, setSearch] = useState('')
@@ -60,8 +60,10 @@ export function Leads() {
 
   const saveLead = useMutation({
     mutationFn: async (newData) => {
+      // Ensure empty string assigned_to becomes null for the UUID column
+      const payload = { ...newData, assigned_to: newData.assigned_to || null };
       if (editingLead) {
-        const { error } = await insforge.from('leads').update(newData).eq('id', editingLead.id)
+        const { error } = await insforge.from('leads').update(payload).eq('id', editingLead.id)
         if (error) throw error
         
         if (convertToDeal && newData.status !== 'converted') {
@@ -71,13 +73,13 @@ export function Leads() {
           await insforge.from('deals').insert([{
             company_id: company.id,
             lead_id: editingLead.id,
-            title: `${newData.company_name || newData.first_name} Deal`,
+            title: `${payload.company_name || payload.first_name} Deal`,
             stage: 'new_lead',
-            assigned_to: newData.assigned_to || null
+            assigned_to: payload.assigned_to
           }])
         }
       } else {
-        const { data: leadData, error } = await insforge.from('leads').insert([{ ...newData, company_id: company.id }]).select().single()
+        const { data: leadData, error } = await insforge.from('leads').insert([{ ...payload, company_id: company.id }]).select().single()
         if (error) throw error
 
         if (convertToDeal) {
@@ -85,19 +87,23 @@ export function Leads() {
           await insforge.from('deals').insert([{
             company_id: company.id,
             lead_id: leadData.id,
-            title: `${newData.company_name || newData.first_name} Deal`,
+            title: `${payload.company_name || payload.first_name} Deal`,
             stage: 'new_lead',
-            assigned_to: newData.assigned_to || null
+            assigned_to: payload.assigned_to
           }])
         }
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['leads', company?.id])
-      queryClient.invalidateQueries(['deals', company?.id]) // in case a deal was created
+      queryClient.invalidateQueries({ queryKey: ['leads', company?.id] })
+      queryClient.invalidateQueries({ queryKey: ['deals', company?.id] }) // in case a deal was created
       setIsModalOpen(false)
       setEditingLead(null)
       setConvertToDeal(false)
+    },
+    onError: (err) => {
+      console.error(err)
+      alert("Error saving lead: " + err.message)
     }
   })
 
@@ -107,7 +113,7 @@ export function Leads() {
       if (error) throw error
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['leads', company?.id])
+      queryClient.invalidateQueries({ queryKey: ['leads', company?.id] })
     }
   })
 
@@ -143,23 +149,29 @@ export function Leads() {
   const getPriorityColor = (p) => p === 'high' ? 'inactive' : p === 'medium' ? 'amber' : 'gray'
 
   const columns = [
-    { header: 'Name', cell: ({ row }) => <span style={{ fontWeight: 600, color: "var(--gp-black)" }}>{row.original.first_name} {row.original.last_name}</span> },
-    { header: 'Company', accessorKey: 'company_name' },
-    { header: 'Email/Phone', cell: ({ row }) => <div style={{ fontSize: '12px' }}><div>{row.original.email}</div><div style={{ color: '#6B7280' }}>{row.original.phone}</div></div> },
-    { header: 'Source', accessorKey: 'source', cell: (info) => <span style={{ textTransform: 'capitalize', fontSize: '12px', color: '#4B5563' }}>{info.getValue()?.replace('_', ' ')}</span> },
-    { header: 'Status', accessorKey: 'status', cell: (info) => <Badge variant={getStatusColor(info.getValue())}>{info.getValue()?.replace('_', ' ')}</Badge> },
-    { header: 'Priority', accessorKey: 'priority', cell: (info) => <Badge variant={getPriorityColor(info.getValue())}>{info.getValue()}</Badge> },
-    { header: 'Assigned To', accessorKey: 'profiles', cell: (info) => info.getValue() ? `${info.getValue().first_name} ${info.getValue().last_name}` : '-' },
-    { header: 'Created', accessorKey: 'created_at', cell: (info) => format(new Date(info.getValue()), 'MMM dd, yyyy') },
+    { header: 'Name', exportValue: row => `${row.first_name} ${row.last_name}`, cell: ({ row }) => <span style={{ fontWeight: 600, color: "var(--gp-black)" }}>{row.original.first_name} {row.original.last_name}</span> },
+    { header: 'Company', accessorKey: 'company_name', exportValue: row => row.company_name || '-' },
+    { header: 'Email/Phone', exportValue: row => `${row.email || ''} ${row.phone || ''}`.trim() || '-', cell: ({ row }) => <div style={{ fontSize: '12px' }}><div>{row.original.email}</div><div style={{ color: '#6B7280' }}>{row.original.phone}</div></div> },
+    { header: 'Source', accessorKey: 'source', exportValue: row => row.source?.replace('_', ' ') || '-', cell: (info) => <span style={{ textTransform: 'capitalize', fontSize: '12px', color: '#4B5563' }}>{info.getValue()?.replace('_', ' ')}</span> },
+    { header: 'Status', accessorKey: 'status', exportValue: row => row.status?.replace('_', ' ') || '-', cell: (info) => <Badge variant={getStatusColor(info.getValue())}>{info.getValue()?.replace('_', ' ')}</Badge> },
+    { header: 'Priority', accessorKey: 'priority', exportValue: row => row.priority || '-', cell: (info) => <Badge variant={getPriorityColor(info.getValue())}>{info.getValue()}</Badge> },
+    { header: 'Assigned To', accessorKey: 'profiles', exportValue: row => row.profiles ? `${row.profiles.first_name} ${row.profiles.last_name}` : 'Unassigned', cell: (info) => info.getValue() ? `${info.getValue().first_name} ${info.getValue().last_name}` : '-' },
+    { header: 'Created', accessorKey: 'created_at', exportValue: row => row.created_at ? format(new Date(row.created_at), 'MMM dd, yyyy') : '-', cell: (info) => { const val = info.getValue(); return val ? format(new Date(val), 'MMM dd, yyyy') : '-' } },
     {
       header: 'Actions',
       id: 'actions',
-      cell: ({ row }) => (
-        <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
-          <Button variant="secondary" size="sm" onClick={() => openEdit(row.original)}>Edit</Button>
-          <Button variant="danger" size="sm" onClick={() => { if(window.confirm('Delete lead?')) deleteLead.mutate(row.original.id) }}>Del</Button>
-        </div>
-      )
+      cell: ({ row }) => {
+        const lead = row.original
+        const isOwner = lead.assigned_to === profile?.id
+        const isAdminOrManager = role !== 'employee'
+        const canAction = isAdminOrManager || isOwner
+        return (
+          <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
+            <Button variant="secondary" size="sm" onClick={() => openEdit(lead)} disabled={!canAction}>Edit</Button>
+            <Button variant="danger" size="sm" onClick={() => { if(window.confirm('Delete lead?')) deleteLead.mutate(lead.id) }} disabled={!canAction}>Del</Button>
+          </div>
+        )
+      }
     }
   ]
 
@@ -196,8 +208,8 @@ export function Leads() {
 
       <DataTable data={filteredLeads} columns={columns} isLoading={isLoading} onRowClick={openEdit} />
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingLead ? 'Edit Lead' : 'New Lead'}>
-        <form onSubmit={(e) => { e.preventDefault(); saveLead.mutate(formData); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '600px' }}>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingLead ? 'Edit Lead' : 'New Lead'} width={640}>
+        <form onSubmit={(e) => { e.preventDefault(); saveLead.mutate(formData); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <Input label="First Name*" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required />
@@ -214,16 +226,14 @@ export function Leads() {
             <Select label="Status" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} options={STATUSES.map(s => ({value: s, label: s.replace('_', ' ')}))} />
           )}
 
-          <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, marginBottom: '8px' }}>Notes</label>
-            <textarea 
-              value={formData.notes} 
-              onChange={e => setFormData({...formData, notes: e.target.value})}
-              style={{ width: '100%', minHeight: '80px', border: '1px solid #D1D5DB', padding: '8px', borderRadius: 0, fontFamily: 'inherit' }}
-            />
-          </div>
+          <Textarea 
+            label="Notes"
+            value={formData.notes} 
+            onChange={e => setFormData({...formData, notes: e.target.value})}
+            rows={4}
+          />
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500, background: '#F0F9FF', padding: '12px', border: '1px solid #BAE6FD' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500, background: 'var(--gp-card)', color: 'var(--gp-black)', padding: '12px', border: '1px solid var(--gp-border-light)' }}>
             <input 
               type="checkbox" 
               checked={convertToDeal} 

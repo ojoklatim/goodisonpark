@@ -32,29 +32,21 @@ const Commissions = lazy(() => import('../pages/sales/Commissions').then(m => ({
 
 const Directory = lazy(() => import('../pages/employees/Directory').then(m => ({ default: m.Directory })))
 const Profile = lazy(() => import('../pages/employees/Profile').then(m => ({ default: m.Profile })))
-const Review = lazy(() => import('../pages/performance/Review').then(m => ({ default: m.Review })))
-const PerformanceDashboard = lazy(() => import('../pages/performance/Dashboard').then(m => ({ default: m.Dashboard })))
 
 const Departments = lazy(() => import('../pages/operations/Departments').then(m => ({ default: m.Departments })))
 const Projects = lazy(() => import('../pages/operations/Projects').then(m => ({ default: m.Projects })))
 const ProjectDetail = lazy(() => import('../pages/operations/ProjectDetail').then(m => ({ default: m.ProjectDetail })))
 const Tasks = lazy(() => import('../pages/operations/Tasks').then(m => ({ default: m.Tasks })))
 const Approvals = lazy(() => import('../pages/operations/Approvals').then(m => ({ default: m.Approvals })))
-const Documents = lazy(() => import('../pages/operations/Documents').then(m => ({ default: m.Documents })))
 const SOPs = lazy(() => import('../pages/operations/SOPs').then(m => ({ default: m.SOPs })))
 const Calendar = lazy(() => import('../pages/operations/Calendar').then(m => ({ default: m.Calendar })))
 
 const Leave = lazy(() => import('../pages/hr/Leave').then(m => ({ default: m.Leave })))
 const Attendance = lazy(() => import('../pages/hr/Attendance').then(m => ({ default: m.Attendance })))
 const DailyActivity = lazy(() => import('../pages/hr/DailyActivity').then(m => ({ default: m.DailyActivity })))
-const Payroll = lazy(() => import('../pages/hr/Payroll').then(m => ({ default: m.Payroll })))
 const Announcements = lazy(() => import('../pages/hr/Announcements').then(m => ({ default: m.Announcements })))
-const Training = lazy(() => import('../pages/hr/Training').then(m => ({ default: m.Training })))
 
-const FinanceDashboard = lazy(() => import('../pages/finance/FinanceDashboard').then(m => ({ default: m.FinanceDashboard })))
-const Expenses = lazy(() => import('../pages/finance/Expenses').then(m => ({ default: m.Expenses })))
-const Budgets = lazy(() => import('../pages/finance/Budgets').then(m => ({ default: m.Budgets })))
-const FinanceReports = lazy(() => import('../pages/finance/Reports').then(m => ({ default: m.Reports })))
+
 
 const SalesAnalytics = lazy(() => import('../pages/reports/SalesAnalytics').then(m => ({ default: m.SalesAnalytics })))
 const PerformanceAnalytics = lazy(() => import('../pages/reports/PerformanceAnalytics').then(m => ({ default: m.PerformanceAnalytics })))
@@ -62,9 +54,6 @@ const OperationsAnalytics = lazy(() => import('../pages/reports/OperationsAnalyt
 const ExportCenter = lazy(() => import('../pages/reports/ExportCenter').then(m => ({ default: m.ExportCenter })))
 
 const Messages = lazy(() => import('../pages/messages/Messages').then(m => ({ default: m.Messages })))
-const Notifications = lazy(() => import('../pages/notifications/Notifications').then(m => ({ default: m.Notifications })))
-const Social = lazy(() => import('../pages/social/Social').then(m => ({ default: m.Social })))
-const SocialSettings = lazy(() => import('../pages/social/SocialSettings').then(m => ({ default: m.SocialSettings })))
 
 
 function ProtectedRoute({ children }) {
@@ -126,9 +115,6 @@ export const router = createBrowserRouter([
       // People / Employees
       { path: 'employees', element: <SuspenseWrapper><Directory /></SuspenseWrapper> },
       { path: 'employees/:id', element: <SuspenseWrapper><Profile /></SuspenseWrapper> },
-      { path: 'performance', element: <SuspenseWrapper><PerformanceDashboard /></SuspenseWrapper> },
-      { path: 'performance/reviews/new', element: <SuspenseWrapper><Review /></SuspenseWrapper> },
-      { path: 'performance/reviews/:id', element: <SuspenseWrapper><Review /></SuspenseWrapper> },
 
       // Operations
       { path: 'operations/departments', element: <SuspenseWrapper><Departments /></SuspenseWrapper> },
@@ -136,7 +122,6 @@ export const router = createBrowserRouter([
       { path: 'operations/projects/:id', element: <SuspenseWrapper><ProjectDetail /></SuspenseWrapper> },
       { path: 'operations/tasks', element: <SuspenseWrapper><Tasks /></SuspenseWrapper> },
       { path: 'operations/approvals', element: <SuspenseWrapper><Approvals /></SuspenseWrapper> },
-      { path: 'operations/documents', element: <SuspenseWrapper><Documents /></SuspenseWrapper> },
       { path: 'operations/sops', element: <SuspenseWrapper><SOPs /></SuspenseWrapper> },
       { path: 'operations/calendar', element: <SuspenseWrapper><Calendar /></SuspenseWrapper> },
 
@@ -144,15 +129,9 @@ export const router = createBrowserRouter([
       { path: 'hr/leave', element: <SuspenseWrapper><Leave /></SuspenseWrapper> },
       { path: 'hr/attendance', element: <SuspenseWrapper><Attendance /></SuspenseWrapper> },
       { path: 'hr/activity', element: <SuspenseWrapper><DailyActivity /></SuspenseWrapper> },
-      { path: 'hr/payroll', element: <SuspenseWrapper><Payroll /></SuspenseWrapper> },
       { path: 'hr/announcements', element: <SuspenseWrapper><Announcements /></SuspenseWrapper> },
-      { path: 'hr/training', element: <SuspenseWrapper><Training /></SuspenseWrapper> },
 
-      // Finance
-      { path: 'finance', element: <SuspenseWrapper><FinanceDashboard /></SuspenseWrapper> },
-      { path: 'finance/expenses', element: <SuspenseWrapper><Expenses /></SuspenseWrapper> },
-      { path: 'finance/budgets', element: <SuspenseWrapper><Budgets /></SuspenseWrapper> },
-      { path: 'finance/reports', element: <SuspenseWrapper><FinanceReports /></SuspenseWrapper> },
+
 
       // Analytics / Reports
       { path: 'reports/sales', element: <SuspenseWrapper><SalesAnalytics /></SuspenseWrapper> },
@@ -162,9 +141,6 @@ export const router = createBrowserRouter([
 
       // Communications
       { path: 'messages', element: <SuspenseWrapper><Messages /></SuspenseWrapper> },
-      { path: 'notifications', element: <SuspenseWrapper><Notifications /></SuspenseWrapper> },
-      { path: 'social', element: <SuspenseWrapper><Social /></SuspenseWrapper> },
-      { path: 'social/settings', element: <SuspenseWrapper><SocialSettings /></SuspenseWrapper> },
 
       // Company Settings
       { path: 'company/settings', element: <SuspenseWrapper><Settings /></SuspenseWrapper> },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { insforge } from '../../lib/insforge'
@@ -20,6 +20,7 @@ export function QuotationForm() {
   const isNew = !id || id === 'new'
   const { company, profile } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const printRef = useRef(null)
   const [isExporting, setIsExporting] = useState(false)
@@ -27,7 +28,7 @@ export function QuotationForm() {
   const [formData, setFormData] = useState({
     quotation_number: '',
     client_id: '',
-    deal_id: '',
+    deal_id: location.state?.deal_id || '',
     status: 'draft',
     subject: 'Quotation for Services',
     valid_until: '',
@@ -167,6 +168,7 @@ export function QuotationForm() {
   const handleExportPDF = async () => {
     if (!printRef.current) return
     setIsExporting(true)
+    await new Promise(resolve => setTimeout(resolve, 100))
     try {
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
         import('html2canvas'),
@@ -244,7 +246,6 @@ export function QuotationForm() {
 
       {/* Printable / Exportable Document */}
       <div ref={printRef} style={{ background: '#FFFFFF', color: '#111827', padding: '48px', maxWidth: '900px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
-
         <h1 style={{ textAlign: 'center', fontSize: '26px', fontWeight: 800, letterSpacing: '0.08em', margin: '0 0 32px 0' }}>QUOTATION</h1>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
@@ -280,11 +281,17 @@ export function QuotationForm() {
 
         <div style={{ marginBottom: '24px' }}>
           <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Subject</h4>
-          <input
-            value={formData.subject}
-            onChange={e => setFormData({ ...formData, subject: e.target.value })}
-            style={{ width: '100%', fontWeight: 600, fontSize: '14px', border: '1px solid transparent', padding: '4px 0', fontFamily: 'inherit', background: 'transparent' }}
-          />
+          {isExporting ? (
+            <div style={{ width: '100%', fontWeight: 600, fontSize: '14px', padding: '4px 0', minHeight: '26px' }}>
+              {formData.subject}
+            </div>
+          ) : (
+            <input
+              value={formData.subject}
+              onChange={e => setFormData({ ...formData, subject: e.target.value })}
+              style={{ width: '100%', fontWeight: 600, fontSize: '14px', border: '1px solid transparent', padding: '4px 0', fontFamily: 'inherit', background: 'transparent' }}
+            />
+          )}
         </div>
 
         <p style={{ fontSize: '14px', lineHeight: 1.7, marginBottom: '24px' }}>
@@ -306,16 +313,28 @@ export function QuotationForm() {
             {formData.items.map((item, index) => (
               <tr key={index} style={{ borderBottom: '1px solid #E5E7EB' }}>
                 <td style={{ padding: '4px' }}>
-                  <input value={item.description} onChange={e => handleItemChange(index, 'description', e.target.value)} placeholder="Item description"
-                    style={{ width: '100%', padding: '8px', border: '1px solid transparent', fontFamily: 'inherit', background: 'transparent' }} />
+                  {isExporting ? (
+                    <div style={{ padding: '8px', minHeight: '34px' }}>{item.description}</div>
+                  ) : (
+                    <input value={item.description} onChange={e => handleItemChange(index, 'description', e.target.value)} placeholder="Item description"
+                      style={{ width: '100%', padding: '8px', border: '1px solid transparent', fontFamily: 'inherit', background: 'transparent' }} />
+                  )}
                 </td>
                 <td style={{ padding: '4px' }}>
-                  <input type="number" value={item.qty} onChange={e => handleItemChange(index, 'qty', e.target.value)} min="1"
-                    style={{ width: '100%', padding: '8px', border: '1px solid transparent', fontFamily: 'inherit', background: 'transparent' }} />
+                  {isExporting ? (
+                    <div style={{ padding: '8px', minHeight: '34px' }}>{item.qty}</div>
+                  ) : (
+                    <input type="number" value={item.qty} onChange={e => handleItemChange(index, 'qty', e.target.value)} min="1"
+                      style={{ width: '100%', padding: '8px', border: '1px solid transparent', fontFamily: 'inherit', background: 'transparent' }} />
+                  )}
                 </td>
                 <td style={{ padding: '4px' }}>
-                  <input type="number" value={item.unit_price} onChange={e => handleItemChange(index, 'unit_price', e.target.value)} min="0"
-                    style={{ width: '100%', padding: '8px', border: '1px solid transparent', fontFamily: 'inherit', background: 'transparent' }} />
+                  {isExporting ? (
+                    <div style={{ padding: '8px', minHeight: '34px' }}>{Number(item.unit_price).toLocaleString()}</div>
+                  ) : (
+                    <input type="number" value={item.unit_price} onChange={e => handleItemChange(index, 'unit_price', e.target.value)} min="0"
+                      style={{ width: '100%', padding: '8px', border: '1px solid transparent', fontFamily: 'inherit', background: 'transparent' }} />
+                  )}
                 </td>
                 <td style={{ padding: '12px 8px', fontWeight: 500 }}>{Number(item.total || 0).toLocaleString()}</td>
                 <td className="no-export" style={{ padding: '4px', textAlign: 'center' }}>
@@ -349,11 +368,22 @@ export function QuotationForm() {
 
         <div style={{ marginBottom: '24px' }}>
           <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6B7280' }}>Terms and Conditions</h4>
-          <textarea
-            value={formData.terms}
-            onChange={e => setFormData({ ...formData, terms: e.target.value })}
-            style={{ width: '100%', minHeight: '110px', padding: '8px', border: '1px solid #E5E7EB', fontFamily: 'inherit', fontSize: '13px', lineHeight: 1.7, boxSizing: 'border-box' }}
-          />
+          {isExporting ? (
+            <div style={{ padding: '8px', fontSize: '13px', lineHeight: 1.7 }}>
+              {formData.terms?.split('\\n').map((line, i) => (
+                <React.Fragment key={i}>
+                  {line}
+                  <br />
+                </React.Fragment>
+              ))}
+            </div>
+          ) : (
+            <textarea
+              value={formData.terms}
+              onChange={e => setFormData({ ...formData, terms: e.target.value })}
+              style={{ width: '100%', minHeight: '110px', padding: '8px', border: '1px solid #E5E7EB', fontFamily: 'inherit', fontSize: '13px', lineHeight: 1.7, boxSizing: 'border-box' }}
+            />
+          )}
         </div>
 
         <div style={{ marginBottom: '32px' }}>

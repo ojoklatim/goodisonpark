@@ -42,8 +42,9 @@ const statusConfig = {
   critical:  { bg: '#FEE2E2', color: '#DC2626', label: 'Critical' },
 }
 
-export function Badge({ status, label, color, bg }) {
-  const config = statusConfig[status] || { bg: bg || '#F3F4F6', color: color || '#6B7280', label: label || status || '' }
+export function Badge({ status, label, color, bg, variant, children }) {
+  const resolvedStatus = status || variant;
+  const config = statusConfig[resolvedStatus] || { bg: bg || '#F3F4F6', color: color || '#6B7280', label: label || resolvedStatus || '' }
 
   return (
     <span style={{
@@ -58,7 +59,7 @@ export function Badge({ status, label, color, bg }) {
       borderRadius: 0,
       whiteSpace: 'nowrap',
     }}>
-      {label || config.label}
+      {children || label || config.label}
     </span>
   )
 }

@@ -35,7 +35,12 @@ export function CheckInWidget() {
   const checkIn = useMutation({
     mutationFn: async () => {
       const now = new Date()
-      const status = now.getHours() >= LATE_HOUR ? 'late' : 'present'
+      const hourInUG = parseInt(new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Africa/Kampala',
+        hour: 'numeric',
+        hour12: false
+      }).format(now), 10)
+      const status = hourInUG >= 8 ? 'late' : 'present'
       const { error } = await insforge.from('attendance').upsert([{
         company_id: company.id,
         profile_id: profile.id,

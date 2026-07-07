@@ -56,8 +56,8 @@ export function Quotations() {
 
   const columns = [
     { header: 'Quote #', accessorKey: 'quotation_number', cell: ({ row }) => <span style={{ fontWeight: 600, color: "var(--gp-black)" }}>{row.original.quotation_number}</span> },
-    { header: 'Client', accessorKey: 'clients.name', cell: (info) => info.getValue() || '-' },
-    { header: 'Deal', accessorKey: 'deals.title', cell: (info) => info.getValue() || '-' },
+    { header: 'Client', accessorKey: 'clients', cell: (info) => info.getValue()?.name || '-' },
+    { header: 'Deal', accessorKey: 'deals', cell: (info) => info.getValue()?.title || '-' },
     { header: 'Total', accessorKey: 'total', cell: (info) => `UGX ${Number(info.getValue() || 0).toLocaleString()}` },
     { header: 'Status', accessorKey: 'status', cell: (info) => <Badge variant={getStatusColor(info.getValue())}>{info.getValue()}</Badge> },
     { header: 'Valid Until', accessorKey: 'valid_until', cell: (info) => info.getValue() ? format(new Date(info.getValue()), 'MMM dd, yyyy') : '-' },

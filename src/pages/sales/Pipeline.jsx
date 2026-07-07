@@ -214,6 +214,7 @@ export function Pipeline() {
         data={filteredDeals}
         columns={columns}
         loading={isLoading}
+        searchable={false}
         onRowClick={(row) => setSelectedDealId(row.id)}
         emptyTitle="No deals found"
         emptyDescription="No leads have been converted into deals for this period yet."

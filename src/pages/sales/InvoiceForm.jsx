@@ -147,6 +147,7 @@ export function InvoiceForm() {
 
   const saveInvoice = useMutation({
     mutationFn: async (statusOverride) => {
+      const isPaid = (statusOverride || formData.status) === 'paid'
       const payload = {
         company_id: company.id,
         invoice_number: formData.invoice_number,
@@ -163,7 +164,9 @@ export function InvoiceForm() {
         tax_amount: taxAmount,
         total: grandTotal,
         currency: 'UGX',
-        created_by: profile?.id
+        created_by: profile?.id,
+        amount_paid: isPaid ? grandTotal : (isNew ? 0 : invoice?.amount_paid || 0),
+        paid_at: isPaid ? (invoice?.paid_at || new Date().toISOString()) : (isNew ? null : invoice?.paid_at)
       }
       if (isNew) {
         const { error } = await insforge.from('invoices').insert([payload])
@@ -174,7 +177,7 @@ export function InvoiceForm() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['invoices', company?.id])
+      queryClient.invalidateQueries({ queryKey: ['invoices', company?.id] })
       navigate('/dashboard/sales/invoices')
     }
   })
@@ -225,7 +228,7 @@ export function InvoiceForm() {
             <Download size={16} style={{ marginRight: '8px' }} /> {isExporting ? 'Exporting…' : 'Export PDF'}
           </Button>
           <Button variant="secondary" onClick={() => saveInvoice.mutate('draft')}>Save Draft</Button>
-          <Button variant="primary" onClick={() => saveInvoice.mutate('unpaid')}>Save & Issue</Button>
+          <Button variant="primary" onClick={() => saveInvoice.mutate(formData.status)}>Save Invoice</Button>
         </div>
       </div>
 

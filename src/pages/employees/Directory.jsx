@@ -10,17 +10,18 @@ import { Badge } from '../../components/ui/Badge'
 import { Modal } from '../../components/ui/Modal'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { format } from 'date-fns'
 
 export function Directory() {
   const { company } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
 
   const [search, setSearch] = useState('')
-  const [deptFilter, setDeptFilter] = useState('')
+  const [deptFilter, setDeptFilter] = useState(location.state?.department || '')
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -95,7 +96,7 @@ export function Directory() {
   })
 
   const { data: departments = [] } = useQuery({
-    queryKey: ['departments', company?.id],
+    queryKey: ['directory_departments', company?.id],
     queryFn: async () => {
       const { data, error } = await insforge.from('departments').select('name').eq('company_id', company?.id)
       if (error) throw error

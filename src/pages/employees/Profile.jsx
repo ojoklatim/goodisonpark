@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { insforge } from '../../lib/insforge'
 import { useAuth } from '../../hooks/useAuth'
 import { StatCard } from '../../components/ui/StatCard'
@@ -10,6 +10,7 @@ import { DataTable } from '../../components/ui/DataTable'
 import { getInitials } from '../../lib/utils'
 import { Input } from '../../components/ui/Input'
 import { Spinner } from '../../components/ui/Spinner'
+import { Modal } from '../../components/ui/Modal'
 
 export function Profile() {
   const { id } = useParams()
@@ -30,10 +31,99 @@ export function Profile() {
     enabled: !!id
   })
 
+  const queryClient = useQueryClient()
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [formData, setFormData] = useState({
+    first_name: '',
+    last_name: '',
+    job_title: '',
+    department_id: '',
+    branch_id: '',
+    role: '',
+    employee_code: '',
+    salary: '',
+    commission_rate: '',
+    is_active: true
+  })
+
+  // Fetch departments for dropdown
+  const { data: departments = [] } = useQuery({
+    queryKey: ['profile_departments', company?.id],
+    queryFn: async () => {
+      if (!company?.id) return []
+      const { data, error } = await insforge
+        .from('departments')
+        .select('id, name')
+        .eq('company_id', company.id)
+      if (error) throw error
+      return data || []
+    },
+    enabled: !!company?.id
+  })
+
+  // Fetch branches for dropdown
+  const { data: branches = [] } = useQuery({
+    queryKey: ['profile_branches', company?.id],
+    queryFn: async () => {
+      if (!company?.id) return []
+      const { data, error } = await insforge
+        .from('branches')
+        .select('id, name')
+        .eq('company_id', company.id)
+      if (error) throw error
+      return data || []
+    },
+    enabled: !!company?.id
+  })
+
+  // Update effect to populate formData when profile loads
+  React.useEffect(() => {
+    if (profile) {
+      setFormData({
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        job_title: profile.job_title || '',
+        department_id: profile.department_id || '',
+        branch_id: profile.branch_id || '',
+        role: profile.role || 'employee',
+        employee_code: profile.employee_code || '',
+        salary: profile.salary || '',
+        commission_rate: profile.commission_rate || '',
+        is_active: profile.is_active !== false
+      })
+    }
+  }, [profile])
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await insforge
+        .from('profiles')
+        .update({
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          job_title: formData.job_title,
+          department_id: formData.department_id || null,
+          branch_id: formData.branch_id || null,
+          role: formData.role,
+          employee_code: formData.employee_code || null,
+          salary: formData.salary ? Number(formData.salary) : null,
+          commission_rate: formData.commission_rate ? Number(formData.commission_rate) : 0,
+          is_active: formData.is_active
+        })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['profile', id])
+      queryClient.invalidateQueries(['employees'])
+      setIsEditModalOpen(false)
+    }
+  })
+
   if (isLoading) return <div className="p-8 flex justify-center"><Spinner /></div>
   if (!profile) return <div className="p-8">Employee not found.</div>
 
-  const tabs = ['Profile', 'KPIs', 'Attendance', 'Goals', 'Reviews', 'Rewards', 'Training', 'Documents']
+  const tabs = ['Profile', 'Attendance', 'Documents']
 
   return (
     <div>
@@ -57,7 +147,7 @@ export function Profile() {
                 <Badge variant="gray" label={profile.role?.replace('_', ' ')} />
               </div>
             </div>
-            <Button variant="secondary">Edit Profile</Button>
+            <Button variant="secondary" onClick={() => setIsEditModalOpen(true)}>Edit Profile</Button>
           </div>
         </div>
       </div>
@@ -92,11 +182,10 @@ export function Profile() {
       {/* Tab Content */}
       <div style={{ marginTop: '24px' }}>
         {activeTab === 'Profile' && <ProfileDetails profile={profile} />}
-        {activeTab === 'KPIs' && <KPITab profileId={profile.id} />}
         {activeTab === 'Attendance' && <AttendanceTab profileId={profile.id} />}
-        {['Goals', 'Reviews', 'Rewards', 'Training', 'Documents'].includes(activeTab) && (
+        {activeTab === 'Documents' && (
           <div style={{ color: '#6B7280', padding: '24px', background: "var(--gp-card)", border: "1px solid var(--gp-border-light)" }}>
-            {activeTab} module is under construction...
+            Documents module is under construction...
           </div>
         )}
       </div>
@@ -234,6 +323,107 @@ function AttendanceTab({ profileId }) {
         data={attendance} 
         isLoading={isLoading} 
       />
+      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Employee Profile">
+        <form 
+          onSubmit={(e) => { e.preventDefault(); updateMutation.mutate(); }} 
+          style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto', paddingRight: '4px' }}
+        >
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <Input label="First Name" value={formData.first_name} onChange={e => setFormData({...formData, first_name: e.target.value})} required />
+            <Input label="Last Name" value={formData.last_name} onChange={e => setFormData({...formData, last_name: e.target.value})} required />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <Input label="Job Title" value={formData.job_title} onChange={e => setFormData({...formData, job_title: e.target.value})} />
+            <Input label="Employee Code" value={formData.employee_code} onChange={e => setFormData({...formData, employee_code: e.target.value})} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--gp-muted)', marginBottom: '6px' }}>Department</label>
+              <select
+                value={formData.department_id}
+                onChange={e => setFormData({...formData, department_id: e.target.value})}
+                style={{
+                  width: '100%',
+                  background: 'var(--gp-card)',
+                  border: '1px solid var(--gp-border-light)',
+                  color: 'var(--gp-black)',
+                  padding: '10px 12px',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              >
+                <option value="">Unassigned</option>
+                {departments.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--gp-muted)', marginBottom: '6px' }}>Branch</label>
+              <select
+                value={formData.branch_id}
+                onChange={e => setFormData({...formData, branch_id: e.target.value})}
+                style={{
+                  width: '100%',
+                  background: 'var(--gp-card)',
+                  border: '1px solid var(--gp-border-light)',
+                  color: 'var(--gp-black)',
+                  padding: '10px 12px',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              >
+                <option value="">None</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--gp-muted)', marginBottom: '6px' }}>Role</label>
+              <select
+                value={formData.role}
+                onChange={e => setFormData({...formData, role: e.target.value})}
+                style={{
+                  width: '100%',
+                  background: 'var(--gp-card)',
+                  border: '1px solid var(--gp-border-light)',
+                  color: 'var(--gp-black)',
+                  padding: '10px 12px',
+                  fontSize: '14px',
+                  outline: 'none',
+                }}
+              >
+                <option value="employee">Employee</option>
+                <option value="company_admin">Company Admin</option>
+                <option value="hr_manager">HR Manager</option>
+                <option value="operations_manager">Operations Manager</option>
+                <option value="sales_manager">Sales Manager</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '24px' }}>
+              <input
+                type="checkbox"
+                id="is_active"
+                checked={formData.is_active}
+                onChange={e => setFormData({...formData, is_active: e.target.checked})}
+                style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+              />
+              <label htmlFor="is_active" style={{ cursor: 'pointer', fontSize: '14px', color: 'var(--gp-black)' }}>Active Employee</label>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <Input label="Salary" type="number" step="0.01" value={formData.salary} onChange={e => setFormData({...formData, salary: e.target.value})} />
+            <Input label="Commission Rate (%)" type="number" step="0.01" value={formData.commission_rate} onChange={e => setFormData({...formData, commission_rate: e.target.value})} />
+          </div>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '16px' }}>
+            <Button type="button" variant="secondary" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={updateMutation.isPending}>Save Changes</Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }

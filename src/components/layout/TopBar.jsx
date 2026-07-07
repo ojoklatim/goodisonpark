@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Bell, Menu, User, Settings, LogOut, ChevronRight, Sun, Moon } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { insforge } from '../../lib/insforge'
 import { useAuthStore } from '../../store/authStore'
 import { useUiStore } from '../../store/uiStore'
@@ -14,6 +15,30 @@ export function TopBar({ breadcrumb }) {
   const navigate = useNavigate()
   const userRef = useRef(null)
   const notifRef = useRef(null)
+
+  const companyId = profile?.company_id
+  const { data: dbAnnouncements = [] } = useQuery({
+    queryKey: ['bell_announcements', companyId],
+    queryFn: async () => {
+      if (!companyId) return []
+      const { data, error } = await insforge
+        .from('announcements')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      if (error) throw error
+      return data || []
+    },
+    enabled: !!companyId
+  })
+
+  const allDropdownItems = React.useMemo(() => {
+    return [
+      ...notifications.map(n => ({ id: n.id, title: n.title, body: n.body, time: n.created_at, type: 'toast' })),
+      ...dbAnnouncements.map(a => ({ id: a.id, title: `Announcement: ${a.title}`, body: a.content, time: a.created_at, type: 'announcement' }))
+    ].sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0))
+  }, [notifications, dbAnnouncements])
 
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('theme') || 'light'
@@ -32,7 +57,7 @@ export function TopBar({ breadcrumb }) {
     setTheme(t => t === 'light' ? 'dark' : 'light')
   }
 
-  const unread = notifications.filter((n) => !n.read).length
+  const unread = notifications.filter((n) => !n.read).length + dbAnnouncements.length
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -154,13 +179,20 @@ export function TopBar({ breadcrumb }) {
                 </button>
               </div>
               <div style={{ overflowY: 'auto', flex: 1 }}>
-                {notifications.length === 0 ? (
+                {allDropdownItems.length === 0 ? (
                   <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: '#9CA3AF' }}>No notifications</div>
                 ) : (
-                  notifications.slice(0, 10).map((n) => (
+                  allDropdownItems.slice(0, 10).map((n) => (
                     <div
                       key={n.id}
-                      onClick={() => { removeNotification(n.id); setNotifOpen(false) }}
+                      onClick={() => {
+                        if (n.type === 'toast') {
+                          removeNotification(n.id)
+                        } else {
+                          navigate('/dashboard/hr/announcements')
+                        }
+                        setNotifOpen(false)
+                      }}
                       style={{
                         padding: '10px 14px', borderBottom: '1px solid var(--gp-border-light)',
                         cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'flex-start',
@@ -170,7 +202,8 @@ export function TopBar({ breadcrumb }) {
                     >
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: '13px', fontWeight: 600, color: "var(--gp-black)" }}>{n.title}</div>
-                        {n.body && <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: 2 }}>{n.body}</div>}
+                        {n.body && <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{n.body}</div>}
+                        <div style={{ fontSize: '10px', color: '#9CA3AF', marginTop: 4 }}>{n.time ? timeAgo(n.time) : ''}</div>
                       </div>
                     </div>
                   ))

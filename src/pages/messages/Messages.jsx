@@ -25,7 +25,7 @@ export function Messages() {
       if (!userId) return []
       const { data, error } = await insforge
         .from('messages')
-        .select('*, sender:profiles!messages_sender_id_fkey(id,first_name,last_name,role), recipient:profiles!messages_recipient_id_fkey(id,first_name,last_name,role)')
+        .select('*, sender:profiles!sender_id(id,first_name,last_name,role), recipient:profiles!recipient_id(id,first_name,last_name,role)')
         .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
         .order('created_at', { ascending: true })
       if (error) throw error
@@ -519,7 +519,7 @@ export function Messages() {
 
       {/* New Conversation Modal */}
       {showNewModal && (
-        <Modal onClose={() => setShowNewModal(false)} title="New Conversation">
+        <Modal isOpen={showNewModal} onClose={() => setShowNewModal(false)} title="New Conversation">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ position: 'relative' }}>
               <Search

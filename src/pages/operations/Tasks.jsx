@@ -15,8 +15,8 @@ import { Spinner } from '../../components/ui/Spinner'
 export function Tasks() {
   const { company, user } = useAuth()
   const queryClient = useQueryClient()
-  const [viewMode, setViewMode] = useState('table')
   const [showModal, setShowModal] = useState(false)
+  const [editingTaskId, setEditingTaskId] = useState(null)
   const [selectedTask, setSelectedTask] = useState(null)
 
   const [formData, setFormData] = useState({
@@ -61,36 +61,69 @@ export function Tasks() {
     enabled: !!company?.id
   })
 
-  const createTask = useMutation({
+  const saveTask = useMutation({
     mutationFn: async (payload) => {
-      const { error } = await insforge.from('tasks').insert([payload])
-      if (error) throw error
+      if (editingTaskId) {
+        const { error } = await insforge
+          .from('tasks')
+          .update(payload)
+          .eq('id', editingTaskId)
+        if (error) throw error
+      } else {
+        const { error } = await insforge.from('tasks').insert([payload])
+        if (error) throw error
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['tasks', company?.id])
       setShowModal(false)
+      setEditingTaskId(null)
       setFormData({ title: '', description: '', project_id: '', assigned_to: '', priority: 'medium', status: 'todo', due_date: '', estimated_hours: '' })
     }
   })
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    createTask.mutate({
-      ...formData,
+    saveTask.mutate({
+      title: formData.title,
+      description: formData.description,
       company_id: company.id,
       assigned_by: user.id,
       project_id: formData.project_id || null,
       assigned_to: formData.assigned_to || null,
+      priority: formData.priority,
+      status: formData.status,
       due_date: formData.due_date || null,
       estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : null
     })
+  }
+
+  const handleEditClick = (task) => {
+    setEditingTaskId(task.id)
+    setFormData({
+      title: task.title || '',
+      description: task.description || '',
+      project_id: task.project_id || '',
+      assigned_to: task.assigned_to || '',
+      priority: task.priority || 'medium',
+      status: task.status || 'todo',
+      due_date: task.due_date || '',
+      estimated_hours: task.estimated_hours || ''
+    })
+    setShowModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowModal(false)
+    setEditingTaskId(null)
+    setFormData({ title: '', description: '', project_id: '', assigned_to: '', priority: 'medium', status: 'todo', due_date: '', estimated_hours: '' })
   }
 
   const formatStatus = (s) => s.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
 
   const columns = [
     { header: 'Title', accessorKey: 'title', cell: info => <span style={{ fontWeight: 600 }}>{info.getValue()}</span> },
-    { header: 'Project', accessorKey: 'projects.name', cell: info => info.getValue() || '-' },
+    { header: 'Project', accessorKey: 'projects', cell: info => info.getValue()?.name || '-' },
     { header: 'Assignee', accessorKey: 'assignee', cell: info => info.getValue() ? `${info.getValue().first_name} ${info.getValue().last_name}` : 'Unassigned' },
     { 
       header: 'Priority', 
@@ -110,7 +143,12 @@ export function Tasks() {
     { 
       header: 'Actions', 
       id: 'actions',
-      cell: ({ row }) => <button onClick={e => { e.stopPropagation(); setSelectedTask(row.original) }} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
+      cell: ({ row }) => (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={e => { e.stopPropagation(); setSelectedTask(row.original) }} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
+          <button onClick={e => { e.stopPropagation(); handleEditClick(row.original) }} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>Edit</button>
+        </div>
+      )
     }
   ]
 
@@ -123,20 +161,12 @@ export function Tasks() {
       />
 
       <div style={{ display: 'flex', gap: '16px', marginTop: '24px', marginBottom: '24px', alignItems: 'center' }}>
-        <div style={{ display: 'flex', background: 'var(--gp-background)', padding: '4px', border: '1px solid var(--gp-border-light)' }}>
-          <button onClick={() => setViewMode('table')} style={{ padding: '6px 16px', background: viewMode === 'table' ? 'var(--gp-card)' : 'transparent', color: 'var(--gp-black)', border: 'none', cursor: 'pointer', fontWeight: viewMode === 'table' ? 600 : 400 }}>List</button>
-          <button onClick={() => setViewMode('board')} style={{ padding: '6px 16px', background: viewMode === 'board' ? 'var(--gp-card)' : 'transparent', color: 'var(--gp-black)', border: 'none', cursor: 'pointer', fontWeight: viewMode === 'board' ? 600 : 400 }}>Board</button>
-        </div>
         <div style={{ width: '150px' }}><Select options={[{value: 'all', label: 'All Projects'}]} defaultValue="all" /></div>
         <div style={{ width: '150px' }}><Select options={[{value: 'all', label: 'All Assignees'}]} defaultValue="all" /></div>
         <div style={{ width: '150px' }}><Select options={[{value: 'all', label: 'All Statuses'}]} defaultValue="all" /></div>
       </div>
 
-      {viewMode === 'table' ? (
-        <DataTable columns={columns} data={tasks} isLoading={loadingTasks} onRowClick={setSelectedTask} />
-      ) : (
-        <div style={{ color: '#6B7280' }}>Kanban board view across all tasks...</div>
-      )}
+      <DataTable columns={columns} data={tasks} isLoading={loadingTasks} onRowClick={setSelectedTask} />
 
       <RecordDetailModal
         isOpen={!!selectedTask}
@@ -153,7 +183,7 @@ export function Tasks() {
         ] : []}
       />
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="New Task">
+      <Modal isOpen={showModal} onClose={handleCloseModal} title={editingTaskId ? "Edit Task" : "New Task"}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto', padding: '4px' }}>
           <Input label="Task Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required />
           <Input label="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
@@ -192,8 +222,8 @@ export function Tasks() {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-            <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={createTask.isPending}>{createTask.isPending ? 'Saving...' : 'Create Task'}</Button>
+            <Button type="button" variant="secondary" onClick={handleCloseModal}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={saveTask.isPending}>{saveTask.isPending ? 'Saving...' : (editingTaskId ? 'Save Changes' : 'Create Task')}</Button>
           </div>
         </form>
       </Modal>
