@@ -98,7 +98,7 @@ export function Sidebar() {
       if (profile?.role === 'employee') {
         if (group.section === 'Sales' && !['Leads', 'Clients', 'Quotations', 'Invoices'].includes(item.label)) return false
         if (group.section === 'Operations' && !['SOPs', 'Tasks'].includes(item.label)) return false
-        if (group.section === 'People' && item.label !== 'Leave') return false
+        if (group.section === 'People' && !['Leave', 'Daily Activity', 'Attendance'].includes(item.label)) return false
         if (group.section === 'Communications' && item.label !== 'Messages') return false
         if (group.section === 'Analytics') return false
         return true

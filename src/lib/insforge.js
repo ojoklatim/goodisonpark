@@ -29,6 +29,9 @@ export const insforge = {
     getSession: () => sdkClient.auth.refreshSession(),
     signInWithPassword: (credentials) => sdkClient.auth.signInWithPassword(credentials),
     signUp: (credentials) => sdkClient.auth.signUp(credentials),
+    sendResetPasswordEmail: (opts) => sdkClient.auth.sendResetPasswordEmail(opts),
+    exchangeResetPasswordToken: (opts) => sdkClient.auth.exchangeResetPasswordToken(opts),
+    resetPassword: (opts) => sdkClient.auth.resetPassword(opts),
     
     signOut: async () => {
       const res = await sdkClient.auth.signOut()

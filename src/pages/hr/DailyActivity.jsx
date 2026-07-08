@@ -47,7 +47,7 @@ function EmployeeView({ company, profile }) {
 
   const submitLog = useMutation({
     mutationFn: async () => {
-      const { error } = await insforge.from('daily_activity_logs').upsert([{
+      const payload = {
         company_id: company.id,
         profile_id: profile.id,
         date: today,
@@ -55,12 +55,22 @@ function EmployeeView({ company, profile }) {
         plan_for_tomorrow: plan,
         status: 'submitted',
         submitted_at: new Date().toISOString()
-      }], { onConflict: 'profile_id,date' })
-      if (error) throw error
+      }
+      if (todayLog?.id) {
+        const { error } = await insforge.from('daily_activity_logs').update(payload).eq('id', todayLog.id)
+        if (error) throw error
+      } else {
+        const { error } = await insforge.from('daily_activity_logs').insert([payload])
+        if (error) throw error
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['daily_activity_today', profile?.id, today])
       queryClient.invalidateQueries(['daily_activity_history', profile?.id])
+    },
+    onError: (err) => {
+      console.error('[DailyActivity] submit error:', err)
+      alert('Error submitting: ' + (err?.message || JSON.stringify(err)))
     }
   })
 
@@ -145,7 +155,7 @@ function EmployeeView({ company, profile }) {
           {history.filter(h => h.date !== today).map(h => (
             <div key={h.id} style={{ background: 'var(--gp-card)', border: '1px solid var(--gp-border-light)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
               <div>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gp-black)' }}>{format(new Date(h.date), 'MMM d, yyyy')}</span>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gp-black)' }}>{format(new Date(h.date + 'T00:00:00'), 'MMM d, yyyy')}</span>
                 <span style={{ fontSize: '12px', color: 'var(--gp-muted)', marginLeft: '10px' }}>{(h.activities || []).length} activities logged</span>
               </div>
               <Badge variant={h.status === 'reviewed' ? 'active' : 'amber'}>{h.status}</Badge>
@@ -161,7 +171,7 @@ function EmployeeView({ company, profile }) {
 function AdminView({ company }) {
   const queryClient = useQueryClient()
   const [employeeFilter, setEmployeeFilter] = useState('')
-  const [dateFilter, setDateFilter] = useState(todayStr())
+  const [dateFilter, setDateFilter] = useState('')
   const [reviewingLog, setReviewingLog] = useState(null)
   const [feedback, setFeedback] = useState('')
 
@@ -175,12 +185,15 @@ function AdminView({ company }) {
     enabled: !!company?.id
   })
 
-  const { data: logs = [], isLoading } = useQuery({
+  const { data: logs = [], isLoading, error: logsError } = useQuery({
     queryKey: ['daily_activity_logs_admin', company?.id, dateFilter],
     queryFn: async () => {
-      let query = insforge.from('daily_activity_logs').select('*, profiles(first_name, last_name)').eq('company_id', company?.id)
+      let query = insforge.from('daily_activity_logs')
+        .select('*, profiles!profile_id(first_name, last_name)')
+        .eq('company_id', company?.id)
       if (dateFilter) query = query.eq('date', dateFilter)
       const { data, error } = await query.order('submitted_at', { ascending: false })
+      console.log('[DailyActivity Admin] query result:', { data, error })
       if (error) throw error
       return data || []
     },
@@ -202,16 +215,25 @@ function AdminView({ company }) {
       queryClient.invalidateQueries(['daily_activity_logs_admin', company?.id, dateFilter])
       setReviewingLog(null)
       setFeedback('')
+    },
+    onError: (err) => {
+      console.error('[DailyActivity] review error:', err)
+      alert('Error marking reviewed: ' + (err?.message || JSON.stringify(err)))
     }
   })
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ flex: '1 1 200px' }}>
-          <label style={{ fontSize: '12px', color: 'var(--gp-muted)', display: 'block', marginBottom: '6px' }}>Date</label>
-          <input type="date" value={dateFilter} onChange={e => setDateFilter(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--gp-border-light)', borderRadius: 0, background: 'var(--gp-card)', color: 'var(--gp-black)', fontSize: '13px', boxSizing: 'border-box' }} />
+          <label style={{ fontSize: '12px', color: 'var(--gp-muted)', display: 'block', marginBottom: '6px' }}>Filter by Date</label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input type="date" value={dateFilter} onChange={e => setDateFilter(e.target.value)}
+              style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--gp-border-light)', borderRadius: 0, background: 'var(--gp-card)', color: 'var(--gp-black)', fontSize: '13px', boxSizing: 'border-box' }} />
+            {dateFilter && (
+              <button onClick={() => setDateFilter('')} style={{ padding: '8px 12px', border: '1px solid var(--gp-border-light)', background: 'none', color: 'var(--gp-muted)', cursor: 'pointer', fontSize: '12px' }}>All</button>
+            )}
+          </div>
         </div>
         <div style={{ flex: '1 1 200px' }}>
           <Select label="Employee" value={employeeFilter} onChange={e => setEmployeeFilter(e.target.value)}
@@ -219,11 +241,15 @@ function AdminView({ company }) {
         </div>
       </div>
 
-      {isLoading ? (
+      {logsError ? (
+        <div style={{ background: 'var(--gp-card)', border: '1px solid #EF4444', padding: '16px', color: '#EF4444', fontSize: '14px' }}>
+          Error loading logs: {logsError?.message || JSON.stringify(logsError)}
+        </div>
+      ) : isLoading ? (
         <p style={{ color: 'var(--gp-muted)', fontSize: '14px' }}>Loading…</p>
       ) : filteredLogs.length === 0 ? (
         <div style={{ background: 'var(--gp-card)', border: '1px solid var(--gp-border-light)', padding: '32px', textAlign: 'center', color: 'var(--gp-muted)', fontSize: '14px' }}>
-          No activity logs for this date.
+          {dateFilter ? `No activity logs for ${dateFilter}.` : 'No activity logs found.'}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -232,7 +258,7 @@ function AdminView({ company }) {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
                   <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--gp-black)' }}>{log.profiles?.first_name} {log.profiles?.last_name}</span>
-                  <span style={{ fontSize: '12px', color: 'var(--gp-muted)', marginLeft: '10px' }}>{format(new Date(log.date), 'MMM d, yyyy')}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--gp-muted)', marginLeft: '10px' }}>{format(new Date(log.date + 'T00:00:00'), 'MMM d, yyyy')}</span>
                 </div>
                 <Badge variant={log.status === 'reviewed' ? 'active' : 'amber'}>{log.status}</Badge>
               </div>

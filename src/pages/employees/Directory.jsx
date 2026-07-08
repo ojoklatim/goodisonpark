@@ -169,9 +169,7 @@ export function Directory() {
             style={{ 
               fontWeight: 600, 
               color: isPending ? 'var(--gp-muted)' : "var(--gp-blue)", 
-              cursor: isPending ? 'default' : 'pointer' 
             }} 
-            onClick={() => { if (!isPending) navigate(`/dashboard/employees/${row.original.id}`) }}
           >
             {row.original.first_name} {row.original.last_name}
           </span>
@@ -226,15 +224,7 @@ export function Directory() {
               >
                 {deleteInvitation.isPending ? 'Canceling...' : 'Cancel Invite'}
               </Button>
-            ) : (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate(`/dashboard/employees/${row.original.id}`)}
-              >
-                Profile
-              </Button>
-            )}
+            ) : null}
           </div>
         )
       }
@@ -274,7 +264,6 @@ export function Directory() {
         data={filteredEmployees}
         columns={columns}
         isLoading={isLoading}
-        onRowClick={(row) => { if (row.status !== 'pending') navigate(`/dashboard/employees/${row.id}`) }}
       />
 
       <Modal isOpen={isAddOpen} onClose={() => { setIsAddOpen(false); setCreatedInvite(null); addEmployee.reset(); }} title="Add Employee" width={600}>

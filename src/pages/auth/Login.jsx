@@ -10,18 +10,24 @@ import { Logo } from '../../components/ui/Logo'
 export function Login() {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(() => localStorage.getItem('rememberedEmail') || '')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
+  const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem('rememberedEmail'))
 
   async function handleLogin(e) {
     e.preventDefault()
     setError(null)
     setLoading(true)
     try {
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email)
+      } else {
+        localStorage.removeItem('rememberedEmail')
+      }
+
       const { data, error: signInError } = await insforge.auth.signInWithPassword({
         email,
         password,
@@ -159,8 +165,8 @@ export function Login() {
 
       <p style={{ marginTop: '24px', fontSize: '14px', textAlign: 'center', color: 'var(--gp-muted)' }}>
         Don't have an account?{' '}
-        <Link to="/auth/register" style={{ color: "var(--gp-blue)", fontWeight: 600, textDecoration: 'none' }}>
-          Join company
+        <Link to="/auth/register-company" style={{ color: "var(--gp-blue)", fontWeight: 600, textDecoration: 'none' }}>
+          Register Company
         </Link>
       </p>
 

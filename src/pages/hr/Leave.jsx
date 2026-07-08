@@ -31,7 +31,7 @@ function fmt(s) {
 }
 
 export function Leave() {
-  const { company, user, profile } = useAuth()
+  const { company, user, profile, role } = useAuth()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState('requests')
   const [showModal, setShowModal] = useState(false)
@@ -40,7 +40,7 @@ export function Leave() {
 
   const [form, setForm] = useState({ leave_type: 'annual', start_date: '', end_date: '', reason: '' })
 
-  const isManager = ['manager', 'company_admin', 'super_admin', 'team_leader'].includes(profile?.role)
+  const isManager = role === 'company_admin' || role === 'super_admin' || role === 'manager' || role === 'team_leader' || ['manager', 'company_admin', 'super_admin', 'team_leader'].includes(profile?.role)
 
   const { data: leaves = [], isLoading } = useQuery({
     queryKey: ['leave_requests', company?.id],
@@ -82,12 +82,30 @@ export function Leave() {
 
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }) => {
-      const { error } = await insforge.from('leave_requests')
-        .update({ status, approved_by: user.id })
+      console.log('[Leave] updateStatus called', { id, status, userId: user?.id, profileId: profile?.id })
+      const { data: lrData, error: lrError } = await insforge.from('leave_requests')
+        .update({ status, approved_by: profile?.id })
         .eq('id', id)
-      if (error) throw error
+        .select()
+      console.log('[Leave] leave_requests update result:', { lrData, lrError })
+      if (lrError) throw lrError
+
+      const { data: apData, error: apError } = await insforge.from('approvals')
+        .update({ status, approved_by: profile?.id, resolved_at: new Date().toISOString() })
+        .eq('reference_id', id)
+        .eq('type', 'leave')
+        .select()
+      console.log('[Leave] approvals update result:', { apData, apError })
+      if (apError) throw apError
     },
-    onSuccess: () => queryClient.invalidateQueries(['leave_requests', company?.id])
+    onSuccess: () => {
+      queryClient.invalidateQueries(['leave_requests', company?.id])
+      queryClient.invalidateQueries(['approvals', company?.id])
+    },
+    onError: (err) => {
+      console.error('[Leave] updateStatus error:', err)
+      alert('Error: ' + (err?.message || JSON.stringify(err)))
+    }
   })
 
   const handleSubmit = (e) => {
@@ -130,23 +148,7 @@ export function Leave() {
     }}
   ]
 
-  // Calendar logic
-  const year = calDate.getFullYear()
-  const month = calDate.getMonth()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const firstDay = new Date(year, month, 1).getDay()
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-  const approvedLeaves = leaves.filter(l => l.status === 'approved')
-
-  const getLeavesForDay = (dayNum) => {
-    const d = new Date(year, month, dayNum)
-    return approvedLeaves.filter(l => {
-      const s = new Date(l.start_date)
-      const e = new Date(l.end_date)
-      return d >= s && d <= e
-    })
-  }
 
   return (
     <div>
@@ -156,17 +158,8 @@ export function Leave() {
         action={<Button variant="primary" onClick={() => setShowModal(true)}>Request Leave</Button>}
       />
 
-      <div style={{ display: 'flex', gap: '24px', borderBottom: "1px solid var(--gp-border-light)", marginTop: '24px', marginBottom: '24px' }}>
-        {['requests', 'calendar'].map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding: '12px 0', border: 'none', background: 'none', cursor: 'pointer', fontWeight: tab === t ? 600 : 400, color: tab === t ? "var(--gp-blue-dim)" : "#6B7280", borderBottom: tab === t ? '2px solid #38BDF8' : '2px solid transparent', textTransform: 'capitalize' }}>
-            {t === 'requests' ? 'Leave Requests' : 'Leave Calendar'}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'requests' && (
-        <>
-          <DataTable columns={columns} data={leaves} isLoading={isLoading} onRowClick={setViewingLeave} />
+      <div style={{ marginTop: '24px' }}>
+        <DataTable columns={columns} data={leaves} isLoading={isLoading} onRowClick={setViewingLeave} />
 
           <RecordDetailModal
             isOpen={!!viewingLeave}
@@ -182,55 +175,7 @@ export function Leave() {
               { label: 'Reason', value: viewingLeave.reason },
             ] : []}
           />
-        </>
-      )}
-
-      {tab === 'calendar' && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h3 style={{ fontWeight: 700, fontSize: '18px' }}>
-              {calDate.toLocaleString('default', { month: 'long' })} {year}
-            </h3>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Button variant="secondary" onClick={() => setCalDate(new Date(year, month - 1, 1))}>Prev</Button>
-              <Button variant="secondary" onClick={() => setCalDate(new Date(year, month + 1, 1))}>Next</Button>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
-            {LEAVE_TYPES.map(lt => (
-              <div key={lt} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-                <div style={{ width: 12, height: 12, background: LEAVE_COLORS[lt] }} />
-                {fmt(lt)}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', background: "var(--gp-border-light)", border: "1px solid var(--gp-border-light)" }}>
-            {days.map(d => (
-              <div key={d} style={{ background: '#F9FAFB', padding: '10px', textAlign: 'center', fontSize: '12px', fontWeight: 600 }}>{d}</div>
-            ))}
-            {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={`e-${i}`} style={{ background: '#F9FAFB', minHeight: '100px' }} />
-            ))}
-            {Array.from({ length: daysInMonth }).map((_, i) => {
-              const day = i + 1
-              const dayLeaves = getLeavesForDay(day)
-              return (
-                <div key={day} style={{ background: "var(--gp-card)", padding: '8px', minHeight: '100px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#4B5563', marginBottom: '4px' }}>{day}</div>
-                  {dayLeaves.map(l => (
-                    <div key={l.id} title={`${l.employee?.first_name} ${l.employee?.last_name}`}
-                      style={{ background: LEAVE_COLORS[l.leave_type] + '22', borderLeft: `2px solid ${LEAVE_COLORS[l.leave_type]}`, padding: '2px 4px', fontSize: '10px', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {l.employee?.first_name} ({fmt(l.leave_type)})
-                    </div>
-                  ))}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+      </div>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Request Leave">
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

@@ -1,24 +1,74 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { insforge } from '../../lib/insforge'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 
 export function ForgotPassword() {
+  const navigate = useNavigate()
+  
+  // States
+  const [step, setStep] = useState(1) // 1 = request code, 2 = enter code & new password
   const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  
   const [status, setStatus] = useState(null) // null, 'loading', 'success', 'error'
   const [message, setMessage] = useState('')
 
-  const handleSubmit = async (e) => {
+  const handleSendCode = async (e) => {
     e.preventDefault()
     setStatus('loading')
     try {
-      const { error } = await insforge.auth.resetPasswordForEmail(email, {
+      const { error } = await insforge.auth.sendResetPasswordEmail({
+        email,
         redirectTo: `${window.location.origin}/auth/reset-password`,
       })
       if (error) throw error
+      
       setStatus('success')
-      setMessage('Password reset link sent to your email.')
+      setMessage('A reset code has been sent to your email.')
+      setTimeout(() => {
+        setStep(2)
+        setStatus(null)
+        setMessage('')
+      }, 1500)
+    } catch (err) {
+      setStatus('error')
+      setMessage(err.message)
+    }
+  }
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault()
+    if (password !== confirmPassword) {
+      setStatus('error')
+      setMessage('Passwords do not match.')
+      return
+    }
+
+    setStatus('loading')
+    try {
+      // Exchange email + code for session token
+      const res = await insforge.auth.exchangeResetPasswordToken({ email, code })
+      if (res.error) throw res.error
+      
+      const token = res.data.token
+
+      // Update password
+      const { error } = await insforge.auth.resetPassword({
+        newPassword: password,
+        otp: token,
+      })
+      if (error) throw error
+      
+      setStatus('success')
+      setMessage('Password updated successfully! Redirecting to login...')
+      
+      setTimeout(() => {
+        navigate('/auth/login')
+      }, 2000)
     } catch (err) {
       setStatus('error')
       setMessage(err.message)
@@ -27,8 +77,12 @@ export function ForgotPassword() {
 
   return (
     <div>
-      <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>Forgot Password</h2>
-      <p style={{ color: '#9CA3AF', marginBottom: '24px' }}>Enter your email to receive a reset link.</p>
+      <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px' }}>
+        {step === 1 ? 'Forgot Password' : 'Reset Password'}
+      </h2>
+      <p style={{ color: '#9CA3AF', marginBottom: '24px' }}>
+        {step === 1 ? 'Enter your email to receive a reset code.' : 'Enter the 6-digit code and your new password.'}
+      </p>
       
       {status === 'success' && (
         <div style={{ padding: '12px', background: '#F0FDF4', border: '1px solid #22C55E', color: '#15803D', marginBottom: '16px' }}>
@@ -42,8 +96,8 @@ export function ForgotPassword() {
         </div>
       )}
 
-      {status !== 'success' && (
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {step === 1 && (
+        <form onSubmit={handleSendCode} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <Input 
             label="Email" 
             type="email" 
@@ -52,7 +106,40 @@ export function ForgotPassword() {
             onChange={(e) => setEmail(e.target.value)}
           />
           <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '8px' }} disabled={status === 'loading'}>
-            {status === 'loading' ? 'Sending...' : 'Send Reset Link'}
+            {status === 'loading' ? 'Sending...' : 'Send Reset Code'}
+          </Button>
+        </form>
+      )}
+
+      {step === 2 && (
+        <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <Input 
+            label="6-Digit Code" 
+            type="text" 
+            required 
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+          />
+          <Input 
+            label="New Password" 
+            type="password" 
+            required 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <Input 
+            label="Confirm Password" 
+            type="password" 
+            required 
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '8px' }} disabled={status === 'loading'}>
+            {status === 'loading' ? 'Updating...' : 'Update Password'}
+          </Button>
+          
+          <Button type="button" variant="ghost" onClick={() => setStep(1)} style={{ width: '100%' }}>
+            Back to Email
           </Button>
         </form>
       )}

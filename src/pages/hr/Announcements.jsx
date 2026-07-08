@@ -137,8 +137,19 @@ export function Announcements() {
                   )}
                   {!isTruncated && <div />}
                   {isManager && ann.created_by === user?.id && (
-                    <button onClick={() => { if (confirm('Delete this announcement?')) deleteAnnouncement.mutate(ann.id) }}
-                      style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontSize: '12px' }}>
+                    <button 
+                      onClick={() => { if (window.confirm('Delete this announcement?')) deleteAnnouncement.mutate(ann.id) }}
+                      style={{ 
+                        background: 'none', 
+                        border: 'none', 
+                        color: '#EF4444', 
+                        cursor: 'pointer', 
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        padding: '12px',
+                        marginRight: '-12px'
+                      }}
+                    >
                       Delete
                     </button>
                   )}

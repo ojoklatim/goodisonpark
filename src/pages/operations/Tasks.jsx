@@ -22,6 +22,10 @@ export function Tasks() {
   const [formData, setFormData] = useState({
     title: '', description: '', project_id: '', assigned_to: '', priority: 'medium', status: 'todo', due_date: '', estimated_hours: ''
   })
+  
+  const [projectFilter, setProjectFilter] = useState('all')
+  const [assigneeFilter, setAssigneeFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
 
   const { data: tasks = [], isLoading: loadingTasks } = useQuery({
     queryKey: ['tasks', company?.id, role, profile?.id],
@@ -148,32 +152,62 @@ export function Tasks() {
     { 
       header: 'Actions', 
       id: 'actions',
-      cell: ({ row }) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={e => { e.stopPropagation(); setSelectedTask(row.original) }} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
-          <button onClick={e => { e.stopPropagation(); handleEditClick(row.original) }} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>Edit</button>
-        </div>
-      )
+      cell: ({ row }) => {
+        const canEdit = role !== 'employee' || row.original.assigned_to === profile?.id
+        return (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={e => { e.stopPropagation(); setSelectedTask(row.original) }} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
+            {canEdit && (
+              <button onClick={e => { e.stopPropagation(); handleEditClick(row.original) }} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>Edit</button>
+            )}
+          </div>
+        )
+      }
     }
   ]
+
+  const filteredTasks = tasks.filter(t => {
+    if (projectFilter !== 'all' && t.project_id !== projectFilter) return false
+    if (assigneeFilter !== 'all' && t.assigned_to !== assigneeFilter) return false
+    if (statusFilter !== 'all' && t.status !== statusFilter) return false
+    return true
+  })
 
   return (
     <div>
       <PageHeader 
         title="Tasks" 
         subtitle="Manage all operational tasks"
-        action={<Button variant="primary" onClick={() => setShowModal(true)}>New Task</Button>}
+        action={role !== 'employee' && <Button variant="primary" onClick={() => setShowModal(true)}>New Task</Button>}
       />
 
       <div style={{ display: 'flex', gap: '16px', marginTop: '24px', marginBottom: '24px', alignItems: 'center' }}>
-        <div style={{ width: '150px' }}><Select options={[{value: 'all', label: 'All Projects'}]} defaultValue="all" /></div>
+        <div style={{ width: '150px' }}>
+          <Select 
+            value={projectFilter} 
+            onChange={e => setProjectFilter(e.target.value)} 
+            options={[{value: 'all', label: 'All Projects'}, ...projects.map(p => ({ value: p.id, label: p.name }))]} 
+          />
+        </div>
         {role !== 'employee' && (
-          <div style={{ width: '150px' }}><Select options={[{value: 'all', label: 'All Assignees'}]} defaultValue="all" /></div>
+          <div style={{ width: '150px' }}>
+            <Select 
+              value={assigneeFilter} 
+              onChange={e => setAssigneeFilter(e.target.value)} 
+              options={[{value: 'all', label: 'All Assignees'}, ...profiles.map(p => ({ value: p.id, label: `${p.first_name} ${p.last_name}` }))]} 
+            />
+          </div>
         )}
-        <div style={{ width: '150px' }}><Select options={[{value: 'all', label: 'All Statuses'}]} defaultValue="all" /></div>
+        <div style={{ width: '150px' }}>
+          <Select 
+            value={statusFilter} 
+            onChange={e => setStatusFilter(e.target.value)} 
+            options={[{value: 'all', label: 'All Statuses'}, {value: 'todo', label: 'To Do'}, {value: 'in_progress', label: 'In Progress'}, {value: 'in_review', label: 'In Review'}, {value: 'done', label: 'Done'}]} 
+          />
+        </div>
       </div>
 
-      <DataTable columns={columns} data={tasks} isLoading={loadingTasks} onRowClick={setSelectedTask} />
+      <DataTable columns={columns} data={filteredTasks} isLoading={loadingTasks} onRowClick={setSelectedTask} />
 
       <RecordDetailModal
         isOpen={!!selectedTask}
@@ -192,8 +226,8 @@ export function Tasks() {
 
       <Modal isOpen={showModal} onClose={handleCloseModal} title={editingTaskId ? "Edit Task" : "New Task"}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '70vh', overflowY: 'auto', padding: '4px' }}>
-          <Input label="Task Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required />
-          <Input label="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} />
+          <Input label="Task Title" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required disabled={role === 'employee'} />
+          <Input label="Description" value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} disabled={role === 'employee'} />
           
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ flex: 1 }}>
@@ -202,6 +236,7 @@ export function Tasks() {
                 value={formData.project_id} 
                 onChange={e => setFormData({...formData, project_id: e.target.value})}
                 options={[{value: '', label: '-- None --'}, ...projects.map(p => ({value: p.id, label: p.name}))]} 
+                disabled={role === 'employee'}
               />
             </div>
             {role !== 'employee' && (
@@ -221,13 +256,13 @@ export function Tasks() {
               <Select label="Status" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} options={[{value: 'todo', label: 'To Do'}, {value: 'in_progress', label: 'In Progress'}, {value: 'in_review', label: 'In Review'}, {value: 'done', label: 'Done'}]} />
             </div>
             <div style={{ flex: 1 }}>
-              <Select label="Priority" value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value})} options={[{value: 'low', label: 'Low'}, {value: 'medium', label: 'Medium'}, {value: 'high', label: 'High'}, {value: 'critical', label: 'Critical'}]} />
+              <Select label="Priority" value={formData.priority} onChange={e => setFormData({...formData, priority: e.target.value})} options={[{value: 'low', label: 'Low'}, {value: 'medium', label: 'Medium'}, {value: 'high', label: 'High'}, {value: 'critical', label: 'Critical'}]} disabled={role === 'employee'} />
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '16px' }}>
-            <div style={{ flex: 1 }}><Input label="Due Date" type="date" value={formData.due_date} onChange={e => setFormData({...formData, due_date: e.target.value})} /></div>
-            <div style={{ flex: 1 }}><Input label="Est. Hours" type="number" step="0.5" value={formData.estimated_hours} onChange={e => setFormData({...formData, estimated_hours: e.target.value})} /></div>
+            <div style={{ flex: 1 }}><Input label="Due Date" type="date" value={formData.due_date} onChange={e => setFormData({...formData, due_date: e.target.value})} disabled={role === 'employee'} /></div>
+            <div style={{ flex: 1 }}><Input label="Est. Hours" type="number" step="0.5" value={formData.estimated_hours} onChange={e => setFormData({...formData, estimated_hours: e.target.value})} disabled={role === 'employee'} /></div>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>

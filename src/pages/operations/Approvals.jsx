@@ -11,12 +11,12 @@ import { Input } from '../../components/ui/Input'
 import { RecordDetailModal } from '../../components/ui/RecordDetailModal'
 
 export function Approvals() {
-  const { company, user } = useAuth()
+  const { company, user, profile, role } = useAuth()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState('pending') // pending | myRequests
   const [selectedApproval, setSelectedApproval] = useState(null)
 
-  const [rejectModal, setRejectModal] = useState({ show: false, approvalId: null, notes: '' })
+  const [rejectModal, setRejectModal] = useState({ show: false, approval: null, notes: '' })
 
   const { data: approvals = [], isLoading } = useQuery({
     queryKey: ['approvals', company?.id],
@@ -36,36 +36,50 @@ export function Approvals() {
   })
 
   const updateApproval = useMutation({
-    mutationFn: async ({ id, status, notes }) => {
-      const { error } = await insforge
+    mutationFn: async ({ approval, status, notes }) => {
+      console.log('[Approvals] updating', { approval, status, profileId: profile?.id })
+      const { data, error } = await insforge
         .from('approvals')
-        .update({ status, notes, approved_by: user.id, resolved_at: new Date().toISOString() })
-        .eq('id', id)
+        .update({ status, notes, approved_by: profile?.id, resolved_at: new Date().toISOString() })
+        .eq('id', approval.id)
+        .select()
+      console.log('[Approvals] update result:', { data, error })
       if (error) throw error
       
-      // Ideally here we would also update the reference_table record status.
-      // E.g., if type === 'leave', update leave_requests status where id = reference_id
+      if (approval.type === 'leave' && approval.reference_id) {
+        const { error: lrErr } = await insforge.from('leave_requests').update({ status, approved_by: profile?.id }).eq('id', approval.reference_id)
+        console.log('[Approvals] leave_requests sync:', lrErr)
+      } else if (approval.type === 'expense' && approval.reference_id) {
+        await insforge.from('expenses').update({ status }).eq('id', approval.reference_id)
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['approvals', company?.id])
-      setRejectModal({ show: false, approvalId: null, notes: '' })
+      queryClient.invalidateQueries(['leave_requests', company?.id])
+      setRejectModal({ show: false, approval: null, notes: '' })
+    },
+    onError: (err) => {
+      console.error('[Approvals] mutation error:', err)
+      alert('Approval failed: ' + (err?.message || JSON.stringify(err)))
     }
   })
 
-  const handleApprove = (id) => {
-    updateApproval.mutate({ id, status: 'approved' })
+  const handleApprove = (approval) => {
+    updateApproval.mutate({ approval, status: 'approved' })
   }
 
   const handleReject = (e) => {
     e.preventDefault()
-    updateApproval.mutate({ id: rejectModal.approvalId, status: 'rejected', notes: rejectModal.notes })
+    updateApproval.mutate({ approval: rejectModal.approval, status: 'rejected', notes: rejectModal.notes })
   }
 
   const filteredApprovals = approvals.filter(app => {
     if (tab === 'pending') {
       return app.status === 'pending'
+    } else if (tab === 'history') {
+      return true // Admins see all requests in History
     } else {
-      return app.requested_by === user?.id
+      return app.requested_by === user?.id // Employees see only their requests
     }
   })
 
@@ -97,8 +111,8 @@ export function Approvals() {
           <div style={{ display: 'flex', gap: '8px' }} onClick={e => e.stopPropagation()}>
             {tab === 'pending' && row.status === 'pending' ? (
               <>
-                <button onClick={() => handleApprove(row.id)} style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer', fontWeight: 600 }}>Approve</button>
-                <button onClick={() => setRejectModal({ show: true, approvalId: row.id, notes: '' })} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }}>Reject</button>
+                <button onClick={() => handleApprove(row)} style={{ background: 'none', border: 'none', color: '#22C55E', cursor: 'pointer', fontWeight: 600 }}>Approve</button>
+                <button onClick={() => setRejectModal({ show: true, approval: row, notes: '' })} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', fontWeight: 600 }}>Reject</button>
               </>
             ) : (
               <button onClick={() => setSelectedApproval(row)} style={{ background: 'none', border: 'none', color: "var(--gp-blue)", cursor: 'pointer' }}>View</button>
@@ -123,12 +137,21 @@ export function Approvals() {
         >
           Pending My Approval
         </button>
-        <button 
-          onClick={() => setTab('myRequests')}
-          style={{ padding: '12px 0', border: 'none', background: 'none', cursor: 'pointer', fontWeight: tab === 'myRequests' ? 600 : 400, color: tab === 'myRequests' ? "var(--gp-blue-dim)" : "#6B7280", borderBottom: tab === 'myRequests' ? '2px solid #38BDF8' : '2px solid transparent' }}
-        >
-          My Requests
-        </button>
+        {role === 'employee' ? (
+          <button 
+            onClick={() => setTab('myRequests')}
+            style={{ padding: '12px 0', border: 'none', background: 'none', cursor: 'pointer', fontWeight: tab === 'myRequests' ? 600 : 400, color: tab === 'myRequests' ? "var(--gp-blue-dim)" : "#6B7280", borderBottom: tab === 'myRequests' ? '2px solid #38BDF8' : '2px solid transparent' }}
+          >
+            My Requests
+          </button>
+        ) : (
+          <button 
+            onClick={() => setTab('history')}
+            style={{ padding: '12px 0', border: 'none', background: 'none', cursor: 'pointer', fontWeight: tab === 'history' ? 600 : 400, color: tab === 'history' ? "var(--gp-blue-dim)" : "#6B7280", borderBottom: tab === 'history' ? '2px solid #38BDF8' : '2px solid transparent' }}
+          >
+            History
+          </button>
+        )}
       </div>
 
       <DataTable columns={columns} data={filteredApprovals} isLoading={isLoading} onRowClick={setSelectedApproval} />
@@ -147,7 +170,7 @@ export function Approvals() {
         ] : []}
       />
 
-      <Modal isOpen={rejectModal.show} onClose={() => setRejectModal({ show: false, approvalId: null, notes: '' })} title="Reject Request">
+      <Modal isOpen={rejectModal.show} onClose={() => setRejectModal({ show: false, approval: null, notes: '' })} title="Reject Request">
         <form onSubmit={handleReject} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <Input 
             label="Reason for Rejection" 

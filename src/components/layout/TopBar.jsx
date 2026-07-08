@@ -244,7 +244,6 @@ export function TopBar({ breadcrumb }) {
                 </div>
               )}
               {[
-                { label: 'My Profile', icon: User, to: `/dashboard/employees/${profile?.id}` },
                 { label: 'Settings', icon: Settings, to: '/dashboard/company/settings' },
               ].map((item) => (
                 <button

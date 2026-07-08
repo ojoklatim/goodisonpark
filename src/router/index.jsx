@@ -9,6 +9,7 @@ import { NotFound } from '../pages/NotFound'
 // Eager imports for auth
 import { Login } from '../pages/auth/Login'
 import { Register } from '../pages/auth/Register'
+import { RegisterCompany } from '../pages/auth/RegisterCompany'
 import { ForgotPassword } from '../pages/auth/ForgotPassword'
 import { ResetPassword } from '../pages/auth/ResetPassword'
 
@@ -31,7 +32,7 @@ const InvoiceForm = lazy(() => import('../pages/sales/InvoiceForm').then(m => ({
 const Commissions = lazy(() => import('../pages/sales/Commissions').then(m => ({ default: m.Commissions })))
 
 const Directory = lazy(() => import('../pages/employees/Directory').then(m => ({ default: m.Directory })))
-const Profile = lazy(() => import('../pages/employees/Profile').then(m => ({ default: m.Profile })))
+
 
 const Departments = lazy(() => import('../pages/operations/Departments').then(m => ({ default: m.Departments })))
 const Projects = lazy(() => import('../pages/operations/Projects').then(m => ({ default: m.Projects })))
@@ -39,7 +40,7 @@ const ProjectDetail = lazy(() => import('../pages/operations/ProjectDetail').the
 const Tasks = lazy(() => import('../pages/operations/Tasks').then(m => ({ default: m.Tasks })))
 const Approvals = lazy(() => import('../pages/operations/Approvals').then(m => ({ default: m.Approvals })))
 const SOPs = lazy(() => import('../pages/operations/SOPs').then(m => ({ default: m.SOPs })))
-const Calendar = lazy(() => import('../pages/operations/Calendar').then(m => ({ default: m.Calendar })))
+
 
 const Leave = lazy(() => import('../pages/hr/Leave').then(m => ({ default: m.Leave })))
 const Attendance = lazy(() => import('../pages/hr/Attendance').then(m => ({ default: m.Attendance })))
@@ -83,6 +84,7 @@ export const router = createBrowserRouter([
     children: [
       { path: 'login', element: <Login /> },
       { path: 'register', element: <Register /> },
+      { path: 'register-company', element: <RegisterCompany /> },
       { path: 'forgot-password', element: <ForgotPassword /> },
       { path: 'reset-password', element: <ResetPassword /> },
     ],
@@ -114,7 +116,7 @@ export const router = createBrowserRouter([
 
       // People / Employees
       { path: 'employees', element: <SuspenseWrapper><Directory /></SuspenseWrapper> },
-      { path: 'employees/:id', element: <SuspenseWrapper><Profile /></SuspenseWrapper> },
+
 
       // Operations
       { path: 'operations/departments', element: <SuspenseWrapper><Departments /></SuspenseWrapper> },
@@ -123,7 +125,7 @@ export const router = createBrowserRouter([
       { path: 'operations/tasks', element: <SuspenseWrapper><Tasks /></SuspenseWrapper> },
       { path: 'operations/approvals', element: <SuspenseWrapper><Approvals /></SuspenseWrapper> },
       { path: 'operations/sops', element: <SuspenseWrapper><SOPs /></SuspenseWrapper> },
-      { path: 'operations/calendar', element: <SuspenseWrapper><Calendar /></SuspenseWrapper> },
+
 
       // HR
       { path: 'hr/leave', element: <SuspenseWrapper><Leave /></SuspenseWrapper> },
