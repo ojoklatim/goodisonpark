@@ -8,6 +8,7 @@ import { Select } from '../ui/Select'
 import { Badge } from '../ui/Badge'
 import { X, Calendar, Phone, Mail, FileText, CheckCircle, UploadCloud, Download } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
+import { useAuth } from '../../hooks/useAuth'
 
 const STAGES = [
   { id: 'new_lead', label: 'New Lead', color: "var(--gp-blue)" },
@@ -21,6 +22,7 @@ const STAGES = [
 export function DealDrawer({ dealId, onClose }) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { role, profile } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
   const [uploading, setUploading] = useState(false)
 
@@ -259,7 +261,7 @@ export function DealDrawer({ dealId, onClose }) {
 
         {/* Tabs */}
         <div style={{ display: 'flex', borderBottom: "1px solid var(--gp-border-light)" }}>
-          {['overview', 'activities', 'quotations', 'files'].map(tab => (
+          {['overview', 'activities', 'quotations', 'files'].filter(t => !(t === 'quotations' && (role === 'employee' || profile?.role === 'employee'))).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

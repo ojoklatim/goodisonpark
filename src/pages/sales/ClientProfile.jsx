@@ -151,7 +151,7 @@ export function ClientProfile() {
       </div>
 
       <div style={{ display: 'flex', borderBottom: "1px solid var(--gp-border-light)", marginBottom: '24px' }}>
-        {['overview', 'deals', 'invoices', 'files'].map(tab => (
+        {['overview', 'deals', 'invoices', 'files'].filter(t => !(t === 'invoices' && (role === 'employee' || profile?.role === 'employee'))).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}

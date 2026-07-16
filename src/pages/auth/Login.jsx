@@ -5,7 +5,6 @@ import { insforge } from '../../lib/insforge'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Eye, EyeOff, Building2 } from 'lucide-react'
-import { Logo } from '../../components/ui/Logo'
 
 export function Login() {
   const navigate = useNavigate()
@@ -106,7 +105,6 @@ export function Login() {
 
   return (
     <div>
-      <Logo size={140} showText={true} style={{ margin: '0 auto 32px' }} />
       {error && (
         <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', marginBottom: '16px', borderRadius: 0, fontSize: '14px' }}>
           {error}
@@ -169,10 +167,6 @@ export function Login() {
           Register Company
         </Link>
       </p>
-
-      <div style={{ marginTop: '48px', textAlign: 'center', fontSize: '11px', color: 'var(--gp-muted)', opacity: 0.5, letterSpacing: '1px', textTransform: 'uppercase' }}>
-        Goodison Park Properties
-      </div>
     </div>
   )
 }

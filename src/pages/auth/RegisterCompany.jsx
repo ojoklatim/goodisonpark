@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { insforge } from '../../lib/insforge'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { Logo } from '../../components/ui/Logo'
 import { useAuthStore } from '../../store/authStore'
+import { Building2 } from 'lucide-react'
 
 export function RegisterCompany() {
   const navigate = useNavigate()
@@ -104,11 +104,6 @@ export function RegisterCompany() {
 
   return (
     <div>
-      <Logo size={140} showText={true} style={{ margin: '0 auto 32px' }} />
-      <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '24px', color: "var(--gp-black)" }}>
-        Register Your Company
-      </h2>
-
       {error && (
         <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', marginBottom: '16px', borderRadius: 0, fontSize: '14px' }}>
           {error}
@@ -153,10 +148,6 @@ export function RegisterCompany() {
           Sign In
         </Link>
       </p>
-
-      <div style={{ marginTop: '48px', textAlign: 'center', fontSize: '11px', color: 'var(--gp-muted)', opacity: 0.5, letterSpacing: '1px', textTransform: 'uppercase' }}>
-        Goodison Park Properties
-      </div>
     </div>
   )
 }

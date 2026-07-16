@@ -571,6 +571,21 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS sms_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
+  sender_id UUID REFERENCES profiles(id),
+  client_id UUID REFERENCES clients(id),
+  recipient_phone TEXT NOT NULL,
+  message_body TEXT NOT NULL,
+  twilio_sid TEXT,
+  status TEXT DEFAULT 'pending'
+    CHECK (status IN ('pending', 'sent', 'delivered', 'failed')),
+  segments INTEGER DEFAULT 1,
+  cost NUMERIC(10,4) DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Marketing ------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS social_media_accounts (
@@ -975,6 +990,17 @@ CREATE POLICY "documents_update" ON documents FOR UPDATE USING (
   AND (SELECT role FROM profiles WHERE id = auth.uid()) IN ('manager','company_admin','super_admin')
 );
 CREATE POLICY "documents_delete" ON documents FOR DELETE USING (
+  company_id = get_my_company_id()
+  AND (SELECT role FROM profiles WHERE id = auth.uid()) IN ('company_admin','super_admin')
+);
+
+-- ---------- sms_logs ----------
+ALTER TABLE sms_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "sms_logs_select" ON sms_logs FOR SELECT USING (
+  company_id = get_my_company_id()
+  AND (SELECT role FROM profiles WHERE id = auth.uid()) IN ('company_admin','super_admin')
+);
+CREATE POLICY "sms_logs_insert" ON sms_logs FOR INSERT WITH CHECK (
   company_id = get_my_company_id()
   AND (SELECT role FROM profiles WHERE id = auth.uid()) IN ('company_admin','super_admin')
 );

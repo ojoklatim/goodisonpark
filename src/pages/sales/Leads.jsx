@@ -70,6 +70,9 @@ export function Leads() {
       if (role === 'employee') {
         payload.assigned_to = profile?.id
       }
+      
+      const dealTitle = `${payload.first_name} ${payload.last_name}`.trim() ? `${payload.first_name} ${payload.last_name} Deal` : `${payload.company_name} Deal`
+
       if (editingLead) {
         const { error } = await insforge.from('leads').update(payload).eq('id', editingLead.id)
         if (error) throw error
@@ -81,7 +84,7 @@ export function Leads() {
           await insforge.from('deals').insert([{
             company_id: company.id,
             lead_id: editingLead.id,
-            title: `${payload.company_name || payload.first_name} Deal`,
+            title: dealTitle,
             stage: 'new_lead',
             assigned_to: payload.assigned_to
           }])
@@ -95,7 +98,7 @@ export function Leads() {
           await insforge.from('deals').insert([{
             company_id: company.id,
             lead_id: leadData.id,
-            title: `${payload.company_name || payload.first_name} Deal`,
+            title: dealTitle,
             stage: 'new_lead',
             assigned_to: payload.assigned_to
           }])

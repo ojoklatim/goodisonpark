@@ -6,9 +6,11 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { UploadCloud } from 'lucide-react'
+import { useAuthStore } from '../../store/authStore'
 
 export function Settings() {
   const { company } = useAuth()
+  const { setCompany } = useAuthStore()
   const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState('general')
   const [logoFile, setLogoFile] = useState(null)
@@ -79,8 +81,11 @@ export function Settings() {
       if (error) throw error
       return data
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries(['companySettings', company?.id])
+      if (data && data.length > 0) {
+        setCompany(data[0])
+      }
       alert('Settings saved successfully')
     }
   })
@@ -148,22 +153,92 @@ export function Settings() {
       {/* Content Area */}
       <div style={{ flex: 1, background: "var(--gp-card)", border: "1px solid var(--gp-border-light)", padding: '32px' }}>
         {activeTab === 'general' && (
-          <form onSubmit={handleSave}>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px' }}>General Settings</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-              <Input label="Company Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
-              <Select label="Industry" value={formData.industry} onChange={e => setFormData({...formData, industry: e.target.value})} options={[{value: 'Real Estate', label: 'Real Estate'}, {value: 'Finance', label: 'Finance'}, {value: 'Retail', label: 'Retail'}, {value: 'Technology', label: 'Technology'}, {value: 'Other', label: 'Other'}]} />
-              <Input label="Country" value={formData.country} onChange={e => setFormData({...formData, country: e.target.value})} />
-              <Input label="City" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
-              <Input label="Address" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
-              <Input label="Phone" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
-              <Input label="Email" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-              <Input label="Website" value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} />
+          <div>
+            {/* Logo Section */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '32px', paddingBottom: '24px', borderBottom: '1px solid var(--gp-border-light)' }}>
+              <div 
+                className="circular-frame"
+                style={{
+                  width: '100px',
+                  height: '100px',
+                  border: '1px solid var(--gp-border-light)',
+                  background: 'transparent',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  borderRadius: '50%'
+                }}
+              >
+                {companyData?.logo_url ? (
+                  <img src={companyData.logo_url} alt="Company Logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                ) : (
+                  <span style={{ fontSize: '12px', color: 'var(--gp-muted)' }}>No Logo</span>
+                )}
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--gp-black)' }}>Company Logo</span>
+                <span style={{ fontSize: '12px', color: 'var(--gp-muted)' }}>PNG, JPG or JPEG. Max size 2MB.</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="logo-upload"
+                    style={{ display: 'none' }}
+                    onChange={e => setLogoFile(e.target.files[0])}
+                  />
+                  <label
+                    htmlFor="logo-upload"
+                    style={{
+                      padding: '8px 16px',
+                      background: 'var(--gp-background)',
+                      border: '1px solid var(--gp-border-light)',
+                      color: 'var(--gp-black)',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    <UploadCloud size={16} />
+                    {logoFile ? logoFile.name : 'Choose Image'}
+                  </label>
+                  {logoFile && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={handleLogoUpload}
+                      style={{ padding: '8px 16px', fontSize: '13px' }}
+                    >
+                      Upload
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
-            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>
-              <Button type="submit" variant="primary" disabled={updateCompany.isPending}>Save Changes</Button>
-            </div>
-          </form>
+
+            <form onSubmit={handleSave}>
+              <h3 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '24px' }}>General Settings</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                <Input label="Company Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
+                <Select label="Industry" value={formData.industry} onChange={e => setFormData({...formData, industry: e.target.value})} options={[{value: 'Real Estate', label: 'Real Estate'}, {value: 'Finance', label: 'Finance'}, {value: 'Retail', label: 'Retail'}, {value: 'Technology', label: 'Technology'}, {value: 'Other', label: 'Other'}]} />
+                <Input label="Country" value={formData.country} onChange={e => setFormData({...formData, country: e.target.value})} />
+                <Input label="City" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
+                <Input label="Address" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                <Input label="Phone" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                <Input label="Email" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                <Input label="Website" value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} />
+              </div>
+              <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>
+                <Button type="submit" variant="primary" disabled={updateCompany.isPending}>Save Changes</Button>
+              </div>
+            </form>
+          </div>
         )}
 
 

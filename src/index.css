@@ -66,6 +66,11 @@ html.dark {
   padding: 0;
 }
 
+/* Allow explicit circular frame overrides */
+.circular-frame, .circular-frame * {
+  border-radius: 50% !important;
+}
+
 html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;

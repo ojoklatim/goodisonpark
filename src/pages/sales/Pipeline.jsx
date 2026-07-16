@@ -239,7 +239,7 @@ export function Pipeline() {
         <form onSubmit={(e) => { e.preventDefault(); createDeal.mutate(newDealForm); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <Input label="Deal Title*" value={newDealForm.title} onChange={e => setNewDealForm({...newDealForm, title: e.target.value})} required />
-            <Select label="Lead" value={newDealForm.lead_id} onChange={e => setNewDealForm({...newDealForm, lead_id: e.target.value})} options={[{value: '', label: 'Select Lead'}, ...leads.map(l => ({ value: l.id, label: l.company_name || `${l.first_name} ${l.last_name}` }))]} />
+            <Select label="Lead" value={newDealForm.lead_id} onChange={e => setNewDealForm({...newDealForm, lead_id: e.target.value})} options={[{value: '', label: 'Select Lead'}, ...leads.map(l => ({ value: l.id, label: `${l.first_name} ${l.last_name}`.trim() || l.company_name }))]} />
 
             <Select label="Stage*" value={newDealForm.stage} onChange={e => setNewDealForm({...newDealForm, stage: e.target.value})} options={STAGES.map(s => ({ value: s.id, label: s.label }))} required />
             <Select label="Assigned To" value={newDealForm.assigned_to} onChange={e => setNewDealForm({...newDealForm, assigned_to: e.target.value})} options={[{value: '', label: 'Select Agent'}, ...agents.map(a => ({ value: a.id, label: `${a.first_name} ${a.last_name}` }))]} />

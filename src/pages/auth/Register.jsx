@@ -3,9 +3,9 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { insforge } from '../../lib/insforge'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
-import { Logo } from '../../components/ui/Logo'
 import { Spinner } from '../../components/ui/Spinner'
 import { useAuthStore } from '../../store/authStore'
+import { Building2 } from 'lucide-react'
 
 export function Register() {
   const navigate = useNavigate()
@@ -18,6 +18,8 @@ export function Register() {
   const [invite, setInvite] = useState(null)
   const [inviteLoading, setInviteLoading] = useState(true)
   const [inviteError, setInviteError] = useState(null)
+  const [companyName, setCompanyName] = useState('')
+  const [companyLogo, setCompanyLogo] = useState(null)
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -62,6 +64,18 @@ export function Register() {
           lastName: data.last_name || '',
           workEmail: data.email || ''
         }))
+
+        // Fetch company name and logo
+        const { data: compData } = await insforge
+          .from('companies')
+          .select('name, logo_url')
+          .eq('id', data.company_id)
+          .maybeSingle()
+        
+        if (compData) {
+          setCompanyName(compData.name)
+          setCompanyLogo(compData.logo_url)
+        }
       } catch (err) {
         console.error("Token validation error:", err)
         setInviteError("An error occurred validating your invitation link.")
@@ -201,7 +215,9 @@ export function Register() {
   if (inviteError) {
     return (
       <div style={{ textAlign: 'center', padding: '24px 0' }}>
-        <Logo size={140} showText={true} style={{ margin: '0 auto 32px' }} />
+        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', background: 'var(--gp-blue-glow)', border: '1px solid var(--gp-blue)', color: 'var(--gp-blue)', marginBottom: '16px' }}>
+          <Building2 size={32} />
+        </div>
         <div style={{ padding: '20px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', marginBottom: '24px', borderRadius: 0, fontSize: '14px', lineHeight: 1.5 }}>
           {inviteError}
         </div>
@@ -214,10 +230,9 @@ export function Register() {
 
   return (
     <div>
-      <Logo size={140} showText={true} style={{ margin: '0 auto 32px' }} />
-      <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '24px', color: "var(--gp-black)" }}>
-        Join Goodison Park Properties
-      </h2>
+      {companyLogo && (
+        <img src={companyLogo} alt={companyName} style={{ maxHeight: '64px', maxWidth: '200px', margin: '0 auto 24px', display: 'block', objectFit: 'contain' }} />
+      )}
 
       {error && (
         <div style={{ padding: '12px', background: '#FEF2F2', border: '1px solid #EF4444', color: '#B91C1C', marginBottom: '16px', borderRadius: 0, fontSize: '14px' }}>
@@ -260,10 +275,6 @@ export function Register() {
           Sign In
         </Link>
       </p>
-
-      <div style={{ marginTop: '48px', textAlign: 'center', fontSize: '11px', color: 'var(--gp-muted)', opacity: 0.5, letterSpacing: '1px', textTransform: 'uppercase' }}>
-        Goodison Park Properties
-      </div>
     </div>
   )
 }

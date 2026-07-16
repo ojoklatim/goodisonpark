@@ -48,7 +48,6 @@ const NAV = [
       { label: 'Employees', icon: Users2, to: '/dashboard/employees' },
       { label: 'Attendance', icon: CalendarCheck, to: '/dashboard/hr/attendance' },
       { label: 'Daily Activity', icon: Activity, to: '/dashboard/hr/activity' },
-      { label: 'Leave', icon: Umbrella, to: '/dashboard/hr/leave' },
     ],
   },
 
@@ -77,7 +76,7 @@ const BOTTOM_NAV = [
 ]
 
 export function Sidebar() {
-  const { profile, logout } = useAuthStore()
+  const { profile, company, logout } = useAuthStore()
   const { can } = useAuth()
   const { sidebarOpen, setSidebarOpen } = useUiStore()
   const navigate = useNavigate()
@@ -96,16 +95,15 @@ export function Sidebar() {
       if (isAdmin) return true
       
       if (profile?.role === 'employee') {
-        if (group.section === 'Sales' && !['Leads', 'Clients', 'Quotations', 'Invoices'].includes(item.label)) return false
-        if (group.section === 'Operations' && !['SOPs', 'Tasks'].includes(item.label)) return false
-        if (group.section === 'People' && !['Leave', 'Daily Activity', 'Attendance'].includes(item.label)) return false
+        if (group.section === 'Sales' && !['Pipeline', 'Leads', 'Clients'].includes(item.label)) return false
+        if (group.section === 'Operations' && !['SOPs', 'Tasks', 'Approvals'].includes(item.label)) return false
+        if (group.section === 'People' && !['Daily Activity', 'Attendance'].includes(item.label)) return false
         if (group.section === 'Communications' && item.label !== 'Messages') return false
         if (group.section === 'Analytics') return false
         return true
       }
 
-      if (group.section === 'People' && !['Leave', 'Attendance', 'Daily Activity'].includes(item.label)) return false
-      if (group.section === 'Operations' && item.label === 'Approvals') return false
+      if (group.section === 'People' && !['Attendance', 'Daily Activity'].includes(item.label)) return false
       if (group.section === 'Analytics') return false
       
       return true
@@ -154,17 +152,53 @@ export function Sidebar() {
       >
         {/* Logo */}
         <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid var(--gp-border-light)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Logo size={32} showText={false} />
-            <div>
-              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--gp-black)', lineHeight: 1.2 }}>GOODISON PARK</div>
-              <div style={{ fontSize: '9px', color: 'var(--gp-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Properties</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+            <div 
+              className="circular-frame"
+              style={{ 
+                width: 32, 
+                height: 32, 
+                borderRadius: '50%', 
+                border: '1px solid var(--gp-border-light)', 
+                background: company?.logo_url ? 'transparent' : 'var(--gp-blue-glow)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                overflow: 'hidden', 
+                flexShrink: 0 
+              }}
+            >
+              {company?.logo_url ? (
+                <img 
+                  src={company.logo_url} 
+                  alt={company.name} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
+              ) : (
+                <Building2 size={16} color="var(--gp-blue)" />
+              )}
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ 
+                fontSize: '12px', 
+                fontWeight: 800, 
+                color: 'var(--gp-black)', 
+                lineHeight: 1.2,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {company?.name ? company.name.toUpperCase() : 'PORTAL'}
+              </div>
+              <div style={{ fontSize: '9px', color: 'var(--gp-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Operations
+              </div>
             </div>
           </div>
           {/* Close button for mobile */}
           <button
             onClick={() => setSidebarOpen(false)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'var(--close-btn-display, none)' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'var(--close-btn-display, none)', flexShrink: 0 }}
             className="sidebar-close-btn"
           >
             <X size={18} color="var(--gp-black)" />
